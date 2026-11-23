@@ -4,6 +4,7 @@
 import { Check, Copy, CreditCard, LockKeyhole, MailPlus, Plus, UsersRound } from 'lucide-react';
 import Link from 'next/link';
 import { type FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
+import { OwnerAccessCode } from '@/components/custom/owner-access-code';
 import { PermitWorkspace } from '@/components/custom/permit-workspace';
 import { TeamStatusAlertRecipientSettings } from '@/components/custom/team-status-alert-recipient-settings';
 import { TeamTrialBanner } from '@/components/custom/team-trial-banner';
@@ -403,6 +404,8 @@ export function TeamWorkspace({
           </Badge>
         ) : null}
       </header>
+
+      <OwnerAccessCode />
 
       {error ? (
         <Alert variant="destructive">

@@ -3,6 +3,7 @@
 
 import Link from 'next/link';
 import { EmailVerification } from '@/components/custom/email-verification';
+import { OwnerAccessCode } from '@/components/custom/owner-access-code';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
@@ -56,6 +57,8 @@ export default function ProfilePage() {
         </div>
 
         <Separator className="my-6" />
+
+        <OwnerAccessCode />
 
         {!session.user.emailVerified ? (
           <div className="mb-6 rounded-lg border border-border bg-card p-6">

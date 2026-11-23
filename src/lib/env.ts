@@ -32,8 +32,10 @@ export const env = createEnv({
     BETTER_AUTH_SECRET: z.string().min(1).optional(),
     BETTER_AUTH_URL: z.string().url().optional(),
     BETTER_AUTH_TRUSTED_ORIGINS: z.string().optional(),
-    // Optional. Admin and complimentary access apply only after this mailbox is verified.
+    // Optional. The site owner address. It does not grant access by itself.
     POLSIA_OWNER_EMAIL: z.string().email().optional(),
+    // Optional. The owner types this once after sign-in. At least 12 characters.
+    POLSIA_OWNER_ACCESS_CODE: z.string().min(1).optional(),
     POLSIA_GOOGLE_SIGNIN_CLIENT_ID: z.string().min(1).optional(),
     GOOGLE_SIGNIN_CLIENT_SECRET: z.string().min(1).optional(),
     // @polsia:contrib better-auth end
@@ -84,6 +86,7 @@ export const env = createEnv({
     BETTER_AUTH_URL: process.env.BETTER_AUTH_URL,
     BETTER_AUTH_TRUSTED_ORIGINS: process.env.BETTER_AUTH_TRUSTED_ORIGINS,
     POLSIA_OWNER_EMAIL: process.env.POLSIA_OWNER_EMAIL,
+    POLSIA_OWNER_ACCESS_CODE: process.env.POLSIA_OWNER_ACCESS_CODE,
     POLSIA_GOOGLE_SIGNIN_CLIENT_ID: process.env.POLSIA_GOOGLE_SIGNIN_CLIENT_ID,
     GOOGLE_SIGNIN_CLIENT_SECRET: process.env.GOOGLE_SIGNIN_CLIENT_SECRET,
     // @polsia:contrib better-auth start

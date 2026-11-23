@@ -359,7 +359,7 @@ describe('team subscription access', () => {
     });
   });
 
-  it('keeps a matching owner address locked until the mailbox is verified', async () => {
+  it('keeps a matching owner address locked until that account is an admin', async () => {
     mocks.findUser.mockResolvedValue({
       email: 'owner@example.test',
       emailVerified: false,
@@ -379,10 +379,10 @@ describe('team subscription access', () => {
     expect(mocks.getSubscriptionStatus).not.toHaveBeenCalled();
   });
 
-  it('treats a verified admin owner as paid without a Stripe subscription', async () => {
+  it('treats the configured admin owner as paid without a Stripe subscription', async () => {
     mocks.findUser.mockResolvedValue({
       email: 'owner@example.test',
-      emailVerified: true,
+      emailVerified: false,
       role: 'admin',
     });
     mocks.findMembership.mockResolvedValue({ role: 'owner' });

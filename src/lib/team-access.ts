@@ -69,17 +69,17 @@ export async function getTeamBillingState(teamId: string): Promise<{
   }
 }
 
-async function isVerifiedConfiguredOwner(userId: string): Promise<boolean> {
+async function configuredOwnerIsAdmin(userId: string): Promise<boolean> {
   const configuredOwnerEmail = env.POLSIA_OWNER_EMAIL?.trim().toLowerCase();
   if (!configuredOwnerEmail) return false;
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { email: true, emailVerified: true, role: true },
+    select: { email: true, role: true },
   });
+  // The address alone is not access. The admin role is set only after the
+  // owner access code is accepted, or after Better Auth verifies the mailbox.
   return Boolean(
-    user?.emailVerified &&
-      user.role === 'admin' &&
-      user.email.trim().toLowerCase() === configuredOwnerEmail,
+    user?.role === 'admin' && user.email.trim().toLowerCase() === configuredOwnerEmail,
   );
 }
 
@@ -119,13 +119,12 @@ export async function getTeamAccessState(teamId: string, userId?: string) {
       where: { id: teamId },
       select: { trialStartedAt: true, trialEndsAt: true },
     }),
-    userId ? isVerifiedConfiguredOwner(userId) : Promise.resolve(false),
+    userId ? configuredOwnerIsAdmin(userId) : Promise.resolve(false),
   ]);
   const trialStartedAt = team?.trialStartedAt ?? null;
   const trialEndsAt = team?.trialEndsAt ?? null;
-  // Complimentary access is only for the configured owner after the mailbox
-  // is verified and the admin role has been granted. Matching the address is
-  // not enough, and every other member still needs a subscription.
+  // Complimentary access follows the admin role for the configured owner.
+  // Every other member still needs a subscription.
   if (ownerPaid) {
     const entitlement = resolveTeamEntitlement({
       ownerTesting: false,
