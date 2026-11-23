@@ -28,7 +28,16 @@ const customOrigins =
   env.BETTER_AUTH_TRUSTED_ORIGINS?.split(',')
     .map((o) => o.trim())
     .filter(Boolean) ?? [];
-const trustedOrigins = ['https://*.polsia.app', 'https://*.polsia.io', ...customOrigins];
+function trustedOrigins(request?: Request): string[] {
+  const origins = ['https://*.polsia.app', 'https://*.polsia.io', ...customOrigins];
+  // A browser cannot claim Sec-Fetch-Site: same-origin from another site.
+  // Trust that page's origin so signup works on the published host.
+  if (request?.headers.get('sec-fetch-site') === 'same-origin') {
+    const origin = request.headers.get('origin');
+    if (origin) origins.push(origin);
+  }
+  return origins;
+}
 
 const WILDCARD = '*';
 const HTTP_PROTOCOL = 'http:';
@@ -69,19 +78,29 @@ function parseURL(value: string | undefined): URL | undefined {
  */
 function resolveBaseURL(): BetterAuthOptions['baseURL'] {
   const appURL = parseURL(env.BETTER_AUTH_URL);
-  if (!appURL || googlePlugins.length === 0) {
-    return env.BETTER_AUTH_URL;
-  }
-
+  const publicURL = parseURL(env.NEXT_PUBLIC_APP_URL);
   const customHosts = customOrigins
     .filter((origin) => !origin.includes(WILDCARD))
     .flatMap((origin) => parseURL(origin)?.host ?? []);
-
-  return {
-    allowedHosts: [...new Set([appURL.host, ...customHosts])],
-    fallback: env.BETTER_AUTH_URL,
-    protocol: appURL.protocol === HTTP_PROTOCOL ? 'http' : 'https',
-  };
+  // The published app is served on *.apps.grok.bot while request.url stays on the
+  // internal host. Allow that public host so signup's origin check can pass.
+  const allowedHosts = [
+    ...new Set(
+      [
+        '*.polsia.app',
+        '*.polsia.io',
+        '*.apps.grok.bot',
+        'localhost',
+        '127.0.0.1',
+        appURL?.host,
+        publicURL?.host,
+        ...customHosts,
+      ].filter((host): host is string => Boolean(host)),
+    ),
+  ];
+  const fallback = env.BETTER_AUTH_URL ?? env.NEXT_PUBLIC_APP_URL;
+  const protocol = (appURL ?? publicURL)?.protocol === HTTP_PROTOCOL ? 'http' : 'https';
+  return { allowedHosts, fallback, protocol };
 }
 
 type GoogleEndpoints = Pick<GenericOAuthConfig, 'authorizationUrl' | 'tokenUrl' | 'userInfoUrl'>;
@@ -262,6 +281,9 @@ function createAuth() {
       sendVerificationEmail:
         authConfig.emailVerification?.sendVerificationEmail ??
         (async ({ user, url }) => {
+          // Account creation does not depend on the email proxy. Skip the
+          // message when that proxy is unset instead of failing the signup.
+          if (!env.POLSIA_EMAIL_PROXY_URL) return;
           const href = url
             .replaceAll('&', '&amp;')
             .replaceAll('"', '&quot;')
@@ -283,6 +305,7 @@ function createAuth() {
     // Keep 1.6's behavior unless the app opts in with advanced.database.validateSchema.
     advanced: {
       ...authConfig.advanced,
+      trustedProxyHeaders: true,
       database: {
         ...authConfig.advanced?.database,
         validateSchema: authConfig.advanced?.database?.validateSchema ?? false,
@@ -363,10 +386,19 @@ function getAuth() {
   return cachedAuth;
 }
 
-export const auth = new Proxy({} as ReturnType<typeof createAuth>, {
+// better-auth calls `auth(request)` and also checks `"handler" in auth`.
+// A get-only proxy hides both, so every signup request crashes before auth runs.
+export const auth = new Proxy((() => {}) as unknown as ReturnType<typeof createAuth>, {
+  apply(_target, _thisArg, args) {
+    const instance = getAuth() as unknown as (...params: unknown[]) => unknown;
+    return Reflect.apply(instance, getAuth(), args);
+  },
   get(_target, property) {
     const instance = getAuth();
     const value = instance[property as keyof typeof instance];
     return typeof value === 'function' ? value.bind(instance) : value;
+  },
+  has(_target, property) {
+    return property in getAuth();
   },
 });
