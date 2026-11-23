@@ -229,12 +229,20 @@ function isCrossOriginPreviewRequest(headers: Headers | undefined): boolean {
 /** The Google provider, empty unless enabled; also gates the multi-host base URL. */
 const googlePlugins = googleSignIn();
 
+function configuredAuthSecret(): string {
+  const secret = env.BETTER_AUTH_SECRET;
+  if (!secret) {
+    throw new Error('Better Auth is not configured');
+  }
+  return secret;
+}
+
 export const auth = betterAuth({
   ...authConfig,
   database: prismaAdapter(prisma, {
     provider: 'postgresql',
   }),
-  secret: env.BETTER_AUTH_SECRET,
+  secret: configuredAuthSecret(),
   baseURL: resolveBaseURL(),
   trustedOrigins,
   // Signup must open a session: paywalls and protected pages right after signup

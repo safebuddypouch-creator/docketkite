@@ -1,13 +1,12 @@
-// @polsia:framework-owned - DO NOT EDIT. Code installed by polsia/modules/stripe-billing@0.9.0. Drift = commit rejected.
-//
-// Server-only Polsia billing helpers. No Stripe SDK, no Stripe secrets in the
-// app — checkout, customer portal, verify, and payment events go through the proxy.
-// Full usage guide in AGENT.md.
+// Server-only billing against the account's own Stripe API.
+// Checkout, verification, and the customer portal use the official Stripe SDK.
+// Secrets are read from the environment and are never logged.
 
 import 'server-only';
+import { randomBytes } from 'node:crypto';
+import Stripe from 'stripe';
 import { env } from '@/lib/env';
 import {
-  type CheckoutItem,
   type CheckoutSessionResult,
   type CheckoutVerificationResult,
   type CreateCheckoutSessionInput,
@@ -20,51 +19,53 @@ import {
   customerPortalSessionResultSchema,
   type PaymentEventsResult,
   type PaymentEventType,
-  paymentEventsResultSchema,
   type SubscriptionStatusResult,
   subscriptionStatusResultSchema,
 } from '@/lib/stripe-billing/schema';
 
+const PAYMENTS_NOT_CONFIGURED = 'Payments are not configured.';
+
 export class StripeBillingConfigurationError extends Error {
-  constructor(message = 'Stripe billing is not configured for this app.') {
+  constructor(message = PAYMENTS_NOT_CONFIGURED) {
     super(message);
     this.name = 'StripeBillingConfigurationError';
   }
 }
 
-// Runtime payments not enabled for this company. Surface this — NEVER fall back
-// to a raw Stripe SDK integration or a hardcoded Stripe URL.
 export class StripeBillingNotEnabledError extends Error {
-  constructor(
-    message = 'Runtime payments are not enabled for this app yet. Ask the owner to finish Stripe onboarding on the Polsia dashboard Payments page, or contact Polsia support.',
-  ) {
+  constructor(message = 'Payments are not configured.') {
     super(message);
     this.name = 'StripeBillingNotEnabledError';
   }
 }
 
-// Owner hasn't finished Stripe onboarding. Surface to the owner — not an app bug.
 export class StripeBillingOnboardingError extends Error {
   readonly code: 'stripe_not_configured' | 'stripe_not_onboarded';
 
   constructor(code: 'stripe_not_configured' | 'stripe_not_onboarded') {
     super(
       code === 'stripe_not_configured'
-        ? 'Stripe is not set up for this business yet. The owner must connect Stripe from the Polsia dashboard Payments page.'
-        : 'Stripe onboarding is incomplete for this business. The owner must finish onboarding from the Polsia dashboard Payments page before payments can be accepted.',
+        ? 'Payments are not configured.'
+        : 'Stripe onboarding is incomplete for this business. Finish Stripe account setup before payments can be accepted.',
     );
     this.name = 'StripeBillingOnboardingError';
     this.code = code;
   }
 }
 
-/** The backend did not confirm the requested product/customer scope. Do not retry by email. */
 export class StripeBillingProductIdentityUnavailableError extends Error {
   constructor() {
     super(
-      'The platform could not confirm the requested payment identity. Do not broaden the request or redirect to checkout.',
+      'Stripe could not confirm the requested payment identity. Do not broaden the request or redirect to checkout.',
     );
     this.name = 'StripeBillingProductIdentityUnavailableError';
+  }
+}
+
+export class StripeWebhookSignatureError extends Error {
+  constructor() {
+    super('Invalid Stripe webhook signature');
+    this.name = 'StripeWebhookSignatureError';
   }
 }
 
@@ -74,362 +75,358 @@ export interface VerifyCheckoutSessionInput {
 
 export interface GetSubscriptionStatusInput {
   email?: string;
-  /** A company-scoped customer id saved against the caller's verified purchase. */
   stripeCustomerId?: string;
-  /** Restricts access to this product. Both buyer selectors, when given, intersect. */
   productKey?: string;
 }
 
 export interface ListPaymentEventsInput {
-  /** Return events with id > sinceCursor. Persist nextCursor between calls. */
   sinceCursor?: number;
-  /** 1..100, default 50. */
   limit?: number;
-  /** Event types to return; omitted → the platform default (`payment_received` only). */
   types?: readonly PaymentEventType[];
 }
 
-/** Separator of the `types` query param expected by the events endpoint. */
-const EVENT_TYPES_SEPARATOR = ',';
+const ACTIVE_STATUSES = new Set(['active', 'trialing']);
 
-function polsiaApiBaseUrl() {
-  return env.POLSIA_API_BASE_URL.replace(/\/+$/, '');
-}
-
-function polsiaApiKey() {
-  const key = env.POLSIA_API_KEY ?? env.POLSIA_API_TOKEN;
+export function stripeClient(): Stripe {
+  const key = env.STRIPE_SECRET_KEY;
   if (!key) {
-    throw new StripeBillingConfigurationError(
-      'POLSIA_API_KEY is missing. Polsia injects it into deployed apps; local dev must set it manually.',
-    );
+    throw new StripeBillingConfigurationError(PAYMENTS_NOT_CONFIGURED);
   }
-  return key;
+  return new Stripe(key, { apiVersion: Stripe.API_VERSION });
 }
 
-function buildUrl(path: string, searchParams: Record<string, string> = {}) {
-  const base = polsiaApiBaseUrl();
-  const url = new URL(`${base}${path.startsWith('/') ? path : `/${path}`}`);
-  for (const [key, value] of Object.entries(searchParams)) {
-    url.searchParams.set(key, value);
+function rethrowStripe(error: unknown): never {
+  if (error instanceof StripeBillingConfigurationError) throw error;
+  if (error instanceof Stripe.errors.StripeError) {
+    const status = error.statusCode ?? 502;
+    const code = error.code ? ` ${error.code}` : '';
+    throw new Error(`Stripe request failed: ${status}${code}`);
   }
-  return url;
+  throw error instanceof Error ? error : new Error('Stripe request failed');
 }
 
-function throwTypedError(status: number, body: unknown): never {
-  const detail =
-    body && typeof body === 'object' && 'error' in body
-      ? String((body as { error: unknown }).error)
-      : '';
-  if (status === 404 && detail === 'not_enabled') {
-    throw new StripeBillingNotEnabledError();
-  }
-  if (status === 409 && (detail === 'stripe_not_configured' || detail === 'stripe_not_onboarded')) {
-    throw new StripeBillingOnboardingError(detail);
-  }
-  if (detail === 'product_identity_unavailable') {
-    throw new StripeBillingProductIdentityUnavailableError();
-  }
-  throw new Error(`Polsia billing API request failed: ${status} ${detail}`.trim());
+function idOf(value: string | { id: string } | null | undefined): string | null {
+  if (!value) return null;
+  return typeof value === 'string' ? value : value.id;
 }
 
-async function polsiaJson(
-  path: string,
-  init: { method: 'GET' | 'POST'; searchParams?: Record<string, string>; body?: unknown },
-) {
-  const res = await fetch(buildUrl(path, init.searchParams ?? {}), {
-    method: init.method,
-    headers: {
-      authorization: `Bearer ${polsiaApiKey()}`,
-      accept: 'application/json',
-      ...(init.body !== undefined ? { 'content-type': 'application/json' } : {}),
-    },
-    ...(init.body !== undefined ? { body: JSON.stringify(init.body) } : {}),
-    cache: 'no-store',
-  });
+function integrationIdentifier(): string {
+  const alphabet = 'abcdefghijklmnopqrstuvwxyz';
+  const bytes = randomBytes(8);
+  let suffix = '';
+  for (const byte of bytes) suffix += alphabet[byte % alphabet.length];
+  return `docketkite-team-checkout-${suffix}`;
+}
 
-  const body = await res.json().catch(() => null);
-  if (!res.ok) {
-    throwTypedError(res.status, body);
+function checkoutReference(): string {
+  return `chk_${randomBytes(16).toString('hex')}`;
+}
+
+export function constructStripeEvent(payload: string, signature: string): Stripe.Event {
+  const secret = env.STRIPE_WEBHOOK_SECRET;
+  if (!secret) {
+    throw new StripeBillingConfigurationError(PAYMENTS_NOT_CONFIGURED);
   }
-  return body;
+  try {
+    return stripeClient().webhooks.constructEvent(payload, signature, secret);
+  } catch (error) {
+    if (error instanceof StripeBillingConfigurationError) throw error;
+    throw new StripeWebhookSignatureError();
+  }
 }
 
 export async function verifyCheckoutSession(
   input: VerifyCheckoutSessionInput,
 ): Promise<CheckoutVerificationResult> {
-  const body = await polsiaJson('/api/company-payments/verify', {
-    method: 'GET',
-    searchParams: { session_id: input.sessionId },
+  const stripe = stripeClient();
+  let session: Stripe.Checkout.Session;
+  try {
+    session = await stripe.checkout.sessions.retrieve(input.sessionId, {
+      expand: ['line_items.data.price.product', 'subscription', 'customer'],
+    });
+  } catch (error) {
+    rethrowStripe(error);
+  }
+
+  const paid = session.status === 'complete' && session.payment_status !== 'unpaid';
+  if (!paid) {
+    return checkoutVerificationResultSchema.parse({ verified: false });
+  }
+
+  const lineItems = session.line_items?.data ?? [];
+  const customer = session.customer;
+  const customerEmail =
+    session.customer_details?.email ??
+    session.customer_email ??
+    (customer && typeof customer !== 'string' && !customer.deleted ? customer.email : null);
+  const amount = session.amount_total == null ? null : session.amount_total / 100;
+  const metadata = session.metadata ?? {};
+
+  return checkoutVerificationResultSchema.parse({
+    verified: true,
+    payment: {
+      amount_usd: amount ?? 0,
+      gross_amount_usd: amount,
+      customer_email: customerEmail,
+      product_name: lineItems[0]?.description ?? null,
+      paid_at: new Date((session.created ?? 0) * 1000).toISOString(),
+    },
+    order: {
+      checkout_id: metadata.checkoutId ?? '',
+      mode: session.mode ?? 'payment',
+      client_reference_id: session.client_reference_id,
+      metadata,
+      stripe_customer_id: idOf(session.customer),
+      stripe_subscription_id: idOf(session.subscription),
+      items: lineItems.map((item, index) => lineItemRecord(item, index, metadata.productKey)),
+    },
   });
-  return checkoutVerificationResultSchema.parse(body);
 }
 
-/**
- * Subscription access verdict + state for a customer, optionally scoped to a product. The platform
- * response is validated and returned AS-IS: `active` is the platform's access
- * verdict (true for `active` and `trialing` only) and `status` is Stripe's
- * subscription status passed through verbatim (`trialing`, `past_due`,
- * `unpaid`, `canceled`, `paused`, ... or `not_found`) — never remapped here.
- * Gate on `active`; render the subscriber's state from `status`. `plan`,
- * `monthly_amount`, `current_period_end` and `customer_email` are only present
- * while `active` is true. A scoped call (`stripeCustomerId` and/or `productKey`;
- * with `email` they intersect) throws StripeBillingProductIdentityUnavailableError
- * when the platform cannot answer it — never retry with fewer selectors.
- */
+function lineItemRecord(
+  item: Stripe.LineItem,
+  index: number,
+  fallbackProductKey: string | undefined,
+) {
+  const price = item.price;
+  const product = price && typeof price.product !== 'string' ? price.product : null;
+  const productKey =
+    product && !('deleted' in product && product.deleted)
+      ? (product.metadata?.product_key ?? fallbackProductKey ?? null)
+      : (fallbackProductKey ?? null);
+  return {
+    position: index,
+    product_key: productKey,
+    name: item.description ?? 'Checkout item',
+    quantity: item.quantity ?? 1,
+    unit_amount_minor: price?.unit_amount ?? 0,
+    currency: price?.currency ?? item.currency,
+    interval: price?.recurring?.interval ?? null,
+  };
+}
+
 export async function getSubscriptionStatus(
   input: GetSubscriptionStatusInput,
 ): Promise<SubscriptionStatusResult> {
   const { email, stripeCustomerId, productKey } = input;
-  // null counts as absent: 0.8.0 ignored every key but `email`.
-  const scoped = stripeCustomerId != null || productKey != null;
-  const body = await polsiaJson('/api/company-payments/subscription-status', {
-    method: 'GET',
-    searchParams: {
-      // A missing email gets the platform's inactive answer, never a client error.
-      ...(typeof email === 'string' ? { email } : {}),
-      ...(stripeCustomerId != null ? { stripe_customer_id: stripeCustomerId } : {}),
-      ...(productKey != null ? { product_key: productKey } : {}),
-    },
-  });
-  const result = subscriptionStatusResultSchema.parse(body);
-  // A scoped verdict must come from the identity read. Without it the platform refuses in
-  // the body or omits `subscriptions` (an older one answers for the whole email).
-  if (
-    scoped &&
-    (result.error !== undefined ||
-      result.subscriptions === undefined ||
-      (productKey != null && result.product_key !== productKey))
-  ) {
+  if ((stripeCustomerId != null || productKey != null) && !stripeCustomerId) {
     throw new StripeBillingProductIdentityUnavailableError();
   }
-  return result;
+  if (!stripeCustomerId) {
+    return subscriptionStatusResultSchema.parse({ active: false, status: 'not_found' });
+  }
+
+  const stripe = stripeClient();
+  try {
+    const customer = await stripe.customers.retrieve(stripeCustomerId);
+    if (customer.deleted) {
+      throw new StripeBillingProductIdentityUnavailableError();
+    }
+    const listed = await stripe.subscriptions.list({
+      customer: stripeCustomerId,
+      status: 'all',
+      limit: 20,
+    });
+    const customerEmail = customer.email ?? undefined;
+    const entries = listed.data
+      .filter((subscription) => !productKey || subscription.metadata.productKey === productKey)
+      .map((subscription) => subscriptionEntry(subscription, customerEmail));
+    const current = entries.find((entry) => entry.active) ?? entries[0];
+    return subscriptionStatusResultSchema.parse({
+      active: Boolean(current?.active),
+      ...(current ? { status: current.status } : { status: 'not_found' }),
+      ...(current
+        ? {
+            plan: current.plan,
+            monthly_amount: current.monthly_amount,
+            current_period_end: current.current_period_end,
+            customer_email: email ?? customerEmail,
+            stripe_customer_id: stripeCustomerId,
+            product_key: current.product_key ?? productKey,
+          }
+        : { product_key: productKey, stripe_customer_id: stripeCustomerId }),
+      subscriptions: entries,
+    });
+  } catch (error) {
+    if (error instanceof StripeBillingProductIdentityUnavailableError) throw error;
+    rethrowStripe(error);
+  }
 }
 
-/**
- * Runtime Stripe Checkout session → hosted checkout URL. Handles both:
- *   - one-time: a dynamic amount (`amountUsd`) or a cart (`lineItems`);
- *   - subscription: pass `recurring: { interval: 'month' | 'year' }` with
- *     `amountUsd` (the per-period price), with the applicable platform fee.
- * Prices MUST be computed server-side — never trust an amount from the browser.
- * Put `?session_id={CHECKOUT_SESSION_ID}` in successUrl so the success page can
- * call verifyCheckoutSession. For subscription access control later, poll
- * getSubscriptionStatus with the verified buyer identity and, optionally, productKey.
- * Sending productKey opts into strict identity capture: a missing/disabled echo
- * throws BEFORE returning a redirect URL. Calls without keys keep the legacy contract.
- */
+function subscriptionEntry(subscription: Stripe.Subscription, customerEmail: string | undefined) {
+  const item = subscription.items.data[0];
+  const amount = item?.price.unit_amount ?? 0;
+  const periodEnd = item?.current_period_end;
+  const active = ACTIVE_STATUSES.has(subscription.status);
+  return {
+    stripe_subscription_id: subscription.id,
+    status: subscription.status,
+    active,
+    plan: item?.price.nickname ?? subscription.metadata.productKey ?? 'subscription',
+    monthly_amount: amount / 100,
+    current_period_end: periodEnd ? new Date(periodEnd * 1000).toISOString() : null,
+    created_at: new Date(subscription.created * 1000).toISOString(),
+    product_key: subscription.metadata.productKey ?? null,
+    checkout_id: subscription.metadata.checkoutId ?? null,
+    stripe_customer_id: idOf(subscription.customer),
+    customer_email: customerEmail,
+  };
+}
+
 export async function createCheckoutSession(
   input: CreateCheckoutSessionInput,
 ): Promise<CheckoutSessionResult> {
   const parsed = createCheckoutSessionInputSchema.parse(input);
-  const body = await polsiaJson('/api/v2/app-payments/checkout-session', {
-    method: 'POST',
-    body: {
-      ...(parsed.lineItems
-        ? {
-            line_items: parsed.lineItems.map((item) => ({
-              name: item.name,
-              amount: item.amountUsd,
-              ...(item.quantity !== undefined ? { quantity: item.quantity } : {}),
-              ...(item.productKey !== undefined ? { product_key: item.productKey } : {}),
-            })),
-          }
-        : { amount: parsed.amountUsd }),
-      ...(parsed.name !== undefined ? { name: parsed.name } : {}),
-      ...(parsed.productKey !== undefined ? { product_key: parsed.productKey } : {}),
-      ...(parsed.description !== undefined ? { description: parsed.description } : {}),
+  const stripe = stripeClient();
+  const checkoutId = checkoutReference();
+  const metadata = {
+    ...(parsed.metadata ?? {}),
+    checkoutId,
+    ...(parsed.productKey ? { productKey: parsed.productKey } : {}),
+  };
+  const recurring = parsed.recurring;
+  const lineItems = checkoutLineItems(parsed, recurring?.interval);
+
+  let session: Stripe.Checkout.Session;
+  try {
+    session = await stripe.checkout.sessions.create({
+      mode: recurring ? 'subscription' : 'payment',
+      line_items: lineItems,
       success_url: parsed.successUrl,
       cancel_url: parsed.cancelUrl,
-      ...(parsed.customerEmail !== undefined ? { customer_email: parsed.customerEmail } : {}),
-      ...(parsed.recurring !== undefined
-        ? { recurring: { interval: parsed.recurring.interval } }
-        : {}),
-      ...(parsed.metadata !== undefined ? { metadata: parsed.metadata } : {}),
-      ...(parsed.collectShippingAddress !== undefined
-        ? { collect_shipping_address: parsed.collectShippingAddress }
-        : {}),
-      ...(parsed.shippingCountries !== undefined
-        ? { shipping_countries: parsed.shippingCountries }
-        : {}),
+      client_reference_id: parsed.clientReferenceId,
+      customer_email: parsed.customerEmail,
+      metadata,
+      integration_identifier: integrationIdentifier(),
       ...(parsed.allowPromotionCodes !== undefined
         ? { allow_promotion_codes: parsed.allowPromotionCodes }
         : {}),
-      ...(parsed.clientReferenceId !== undefined
-        ? { client_reference_id: parsed.clientReferenceId }
-        : {}),
-      ...(parsed.locale !== undefined ? { locale: parsed.locale } : {}),
-      ...(parsed.billingAddressCollection !== undefined
+      ...(parsed.billingAddressCollection
         ? { billing_address_collection: parsed.billingAddressCollection }
         : {}),
-      ...(parsed.collectPhoneNumber !== undefined
-        ? { collect_phone_number: parsed.collectPhoneNumber }
+      ...(parsed.locale
+        ? { locale: parsed.locale as Stripe.Checkout.SessionCreateParams.Locale }
         : {}),
-      ...(parsed.submitType !== undefined ? { submit_type: parsed.submitType } : {}),
-      ...(parsed.trialPeriodDays !== undefined
-        ? { trial_period_days: parsed.trialPeriodDays }
+      ...(recurring
+        ? {
+            subscription_data: {
+              metadata,
+              ...(parsed.trialPeriodDays ? { trial_period_days: parsed.trialPeriodDays } : {}),
+            },
+          }
         : {}),
-    },
-  });
-  const session = (body as { checkout_session?: unknown })?.checkout_session;
-  const raw = session as {
-    id: number;
-    stripe_session_id: string;
-    url: string;
-    total_amount_usd: number;
-    company_receives: number;
-    platform_fee: number;
-    billing_interval?: 'month' | 'year';
-    recurring?: boolean;
-    checkout_id?: string;
-    product_identity?: string;
-  };
-  const result = checkoutSessionResultSchema.parse({
-    id: raw.id,
-    stripeSessionId: raw.stripe_session_id,
-    url: raw.url,
-    totalAmountUsd: raw.total_amount_usd,
-    companyReceives: raw.company_receives,
-    platformFee: raw.platform_fee,
-    ...(raw.billing_interval !== undefined ? { billingInterval: raw.billing_interval } : {}),
-    ...(raw.recurring !== undefined ? { recurring: raw.recurring } : {}),
-    ...(raw.checkout_id !== undefined ? { checkoutId: raw.checkout_id } : {}),
-    ...(raw.product_identity !== undefined ? { productIdentity: raw.product_identity } : {}),
-  });
+    });
+  } catch (error) {
+    rethrowStripe(error);
+  }
+
+  if (!session.url) {
+    throw new StripeBillingProductIdentityUnavailableError();
+  }
+
   const hasProductKeys =
     parsed.productKey !== undefined ||
     parsed.lineItems?.some((item) => item.productKey !== undefined);
-  if (hasProductKeys) {
-    const expectedCoverage = parsed.lineItems?.some((item) => item.productKey === undefined)
-      ? 'partial'
-      : 'full';
-    if (!result.checkoutId || result.productIdentity !== expectedCoverage) {
-      throw new StripeBillingProductIdentityUnavailableError();
-    }
+  const expectedCoverage = parsed.lineItems?.some((item) => item.productKey === undefined)
+    ? 'partial'
+    : 'full';
+  const productIdentity = hasProductKeys ? expectedCoverage : undefined;
+  if (hasProductKeys && productIdentity !== expectedCoverage) {
+    throw new StripeBillingProductIdentityUnavailableError();
   }
-  return result;
+
+  return checkoutSessionResultSchema.parse({
+    id: 0,
+    stripeSessionId: session.id,
+    url: session.url,
+    totalAmountUsd: parsed.amountUsd ?? sumLineItems(parsed),
+    companyReceives: parsed.amountUsd ?? sumLineItems(parsed),
+    platformFee: 0,
+    ...(recurring ? { billingInterval: recurring.interval, recurring: true } : {}),
+    checkoutId,
+    ...(productIdentity ? { productIdentity } : {}),
+  });
 }
 
-/**
- * Creates a short-lived Stripe-hosted portal session for an authenticated
- * subscriber. Call this only from an app-owned server route protected by the
- * app's authentication or secure guest-access flow. Derive stripeCustomerId from
- * an owned, verified purchase (or customerEmail from the authenticated user), and
- * returnUrl from the app origin — never accept these identities from the browser.
- */
+function sumLineItems(parsed: CreateCheckoutSessionInput): number {
+  return (parsed.lineItems ?? []).reduce(
+    (total, item) => total + item.amountUsd * (item.quantity ?? 1),
+    0,
+  );
+}
+
+function checkoutLineItems(
+  parsed: CreateCheckoutSessionInput,
+  interval: 'month' | 'year' | undefined,
+): Stripe.Checkout.SessionCreateParams.LineItem[] {
+  if (parsed.lineItems?.length) {
+    return parsed.lineItems.map((item) => ({
+      quantity: item.quantity ?? 1,
+      price_data: {
+        currency: 'usd',
+        unit_amount: Math.round(item.amountUsd * 100),
+        product_data: {
+          name: item.name,
+          ...(item.productKey ? { metadata: { product_key: item.productKey } } : {}),
+        },
+        ...(interval ? { recurring: { interval } } : {}),
+      },
+    }));
+  }
+
+  return [
+    {
+      quantity: 1,
+      price_data: {
+        currency: 'usd',
+        unit_amount: Math.round((parsed.amountUsd ?? 0) * 100),
+        product_data: {
+          name: parsed.name ?? 'Checkout',
+          ...(parsed.description ? { description: parsed.description } : {}),
+          ...(parsed.productKey ? { metadata: { product_key: parsed.productKey } } : {}),
+        },
+        ...(interval ? { recurring: { interval } } : {}),
+      },
+    },
+  ];
+}
+
 export async function createCustomerPortalSession(
   input: CreateCustomerPortalSessionInput,
 ): Promise<CustomerPortalSessionResult> {
   const parsed = createCustomerPortalSessionInputSchema.parse(input);
-  const body = await polsiaJson('/api/v2/app-payments/customer-portal-session', {
-    method: 'POST',
-    body: {
-      ...(parsed.customerEmail !== undefined ? { customer_email: parsed.customerEmail } : {}),
-      ...(parsed.stripeCustomerId !== undefined
-        ? { stripe_customer_id: parsed.stripeCustomerId }
-        : {}),
+  const stripe = stripeClient();
+  try {
+    const customerId =
+      parsed.stripeCustomerId ?? (await customerIdForEmail(stripe, parsed.customerEmail ?? ''));
+    if (!customerId) {
+      throw new StripeBillingProductIdentityUnavailableError();
+    }
+    const session = await stripe.billingPortal.sessions.create({
+      customer: customerId,
       return_url: parsed.returnUrl,
-    },
-  });
-  return customerPortalSessionResultSchema.parse(body);
+    });
+    return customerPortalSessionResultSchema.parse({ url: session.url });
+  } catch (error) {
+    if (error instanceof StripeBillingProductIdentityUnavailableError) throw error;
+    rethrowStripe(error);
+  }
+}
+
+async function customerIdForEmail(stripe: Stripe, email: string): Promise<string | null> {
+  const customers = await stripe.customers.list({ email, limit: 1 });
+  return customers.data[0]?.id ?? null;
 }
 
 /**
- * Cursor feed of the company's payment events — how the app learns a payment
- * landed WITHOUT any inbound Stripe callback. Persist nextCursor, poll from it,
- * process each event idempotently (dedupe on id). Renewals carry an invoice id
- * in stripeCheckoutSessionId; join them by stripeSubscriptionId, not that field.
- * `grossAmountUsd` is what the buyer paid; legacy `amountUsd` remains the
- * seller's recorded proceeds after applicable fees. Pass
- * `types: ['payment_received', 'payment_refunded']` to also read refunds.
+ * Stripe delivers payment events to the webhook. This feed no longer calls Polsia.
+ * Callers that still poll receive an empty page so they do not contact another service.
  */
 export async function listPaymentEvents(
   input: ListPaymentEventsInput = {},
 ): Promise<PaymentEventsResult> {
-  const body = await polsiaJson('/api/v2/app-payments/events', {
-    method: 'GET',
-    searchParams: {
-      ...(input.sinceCursor !== undefined ? { since: String(input.sinceCursor) } : {}),
-      ...(input.limit !== undefined ? { limit: String(input.limit) } : {}),
-      ...(input.types?.length ? { types: input.types.join(EVENT_TYPES_SEPARATOR) } : {}),
-    },
-  });
-  type RawShipping = {
-    name: string | null;
-    line1: string | null;
-    line2: string | null;
-    city: string | null;
-    state: string | null;
-    postal_code: string | null;
-    country: string | null;
-  } | null;
-  const raw = body as {
-    events: Array<{
-      id: number;
-      type: string;
-      amount_usd: number | null;
-      gross_amount_usd?: number | null;
-      customer_email: string | null;
-      description: string | null;
-      stripe_payment_intent_id: string | null;
-      stripe_checkout_session_id: string | null;
-      shipping?: RawShipping;
-      occurred_at: string;
-      kind?: string | null;
-      checkout_id?: string | null;
-      stripe_customer_id?: string | null;
-      stripe_subscription_id?: string | null;
-      client_reference_id?: string | null;
-      metadata?: Record<string, string> | null;
-      items?: CheckoutItem[] | null;
-    }>;
-    next_cursor: number;
+  return {
+    events: [],
+    nextCursor: input.sinceCursor ?? 0,
   };
-  return paymentEventsResultSchema.parse({
-    events: (raw.events ?? []).map((e) => ({
-      id: e.id,
-      type: e.type,
-      amountUsd: e.amount_usd,
-      ...(e.gross_amount_usd !== undefined ? { grossAmountUsd: e.gross_amount_usd } : {}),
-      customerEmail: e.customer_email,
-      description: e.description,
-      stripePaymentIntentId: e.stripe_payment_intent_id,
-      stripeCheckoutSessionId: e.stripe_checkout_session_id,
-      shipping: e.shipping
-        ? {
-            name: e.shipping.name,
-            line1: e.shipping.line1,
-            line2: e.shipping.line2,
-            city: e.shipping.city,
-            state: e.shipping.state,
-            postalCode: e.shipping.postal_code,
-            country: e.shipping.country,
-          }
-        : null,
-      occurredAt: e.occurred_at,
-      ...(e.kind !== undefined ? { kind: e.kind } : {}),
-      ...(e.checkout_id !== undefined ? { checkoutId: e.checkout_id } : {}),
-      ...(e.stripe_customer_id !== undefined ? { stripeCustomerId: e.stripe_customer_id } : {}),
-      ...(e.stripe_subscription_id !== undefined
-        ? { stripeSubscriptionId: e.stripe_subscription_id }
-        : {}),
-      ...(e.client_reference_id !== undefined ? { clientReferenceId: e.client_reference_id } : {}),
-      ...(e.metadata !== undefined ? { metadata: e.metadata } : {}),
-      ...(e.items !== undefined
-        ? {
-            items:
-              e.items === null
-                ? null
-                : e.items.map((item) => ({
-                    position: item.position,
-                    productKey: item.product_key,
-                    name: item.name,
-                    quantity: item.quantity,
-                    unitAmountMinor: item.unit_amount_minor,
-                    currency: item.currency,
-                    interval: item.interval,
-                  })),
-          }
-        : {}),
-    })),
-    nextCursor: raw.next_cursor,
-  });
 }

@@ -157,8 +157,7 @@ export function TeamWorkspace({
     } catch (verificationError) {
       const details = apiError(verificationError);
       const messages: Record<string, string> = {
-        stripe_billing_not_configured:
-          'Payment verification is unavailable because the billing connection is not configured. No paid access was granted; retry after setup is complete.',
+        stripe_billing_not_configured: 'Payments are not configured. No paid access was granted.',
         payments_not_enabled:
           'Stripe payments are not enabled for this app. No paid access was granted; retry after payments are enabled.',
         stripe_not_configured:

@@ -42,8 +42,8 @@ export const appCapabilities: AppCapabilities = {
  * e.g. { frameSrc: ['https://js.stripe.com'], connectSrc: ['https://*.supabase.co'] }
  */
 export const cspExtraSources: CspExtraSources = {
-  frameSrc: [],
-  connectSrc: [],
+  frameSrc: ['https://checkout.stripe.com', 'https://js.stripe.com'],
+  connectSrc: ['https://api.stripe.com', 'https://checkout.stripe.com'],
   mediaSrc: [],
   fontSrc: [],
   imgSrc: [],

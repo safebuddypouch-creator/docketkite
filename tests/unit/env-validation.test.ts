@@ -18,6 +18,37 @@ test('next.config wires env validation (throws on a missing required var)', asyn
   }
 });
 
+test('homepage env loads without Polsia or Better Auth secrets', async () => {
+  const prevDb = process.env.DATABASE_URL;
+  const prevSkip = process.env.SKIP_ENV_VALIDATION;
+  const prevEmail = process.env.POLSIA_EMAIL_PROXY_URL;
+  const prevSecret = process.env.BETTER_AUTH_SECRET;
+  const prevUrl = process.env.BETTER_AUTH_URL;
+  process.env.DATABASE_URL = 'postgresql://user:pass@127.0.0.1:5432/docketkite';
+  delete process.env.SKIP_ENV_VALIDATION;
+  delete process.env.POLSIA_EMAIL_PROXY_URL;
+  delete process.env.BETTER_AUTH_SECRET;
+  delete process.env.BETTER_AUTH_URL;
+  vi.resetModules();
+  try {
+    const { env } = await import('../../src/lib/env');
+    expect(env.DATABASE_URL).toBe(process.env.DATABASE_URL);
+    expect(env.BETTER_AUTH_SECRET).toBeUndefined();
+    expect(env.POLSIA_EMAIL_PROXY_URL).toBeUndefined();
+  } finally {
+    if (prevDb === undefined) delete process.env.DATABASE_URL;
+    else process.env.DATABASE_URL = prevDb;
+    if (prevSkip === undefined) delete process.env.SKIP_ENV_VALIDATION;
+    else process.env.SKIP_ENV_VALIDATION = prevSkip;
+    if (prevEmail === undefined) delete process.env.POLSIA_EMAIL_PROXY_URL;
+    else process.env.POLSIA_EMAIL_PROXY_URL = prevEmail;
+    if (prevSecret === undefined) delete process.env.BETTER_AUTH_SECRET;
+    else process.env.BETTER_AUTH_SECRET = prevSecret;
+    if (prevUrl === undefined) delete process.env.BETTER_AUTH_URL;
+    else process.env.BETTER_AUTH_URL = prevUrl;
+  }
+});
+
 test('SKIP_ENV_VALIDATION bypasses validation', async () => {
   const prevDb = process.env.DATABASE_URL;
   const prevSkip = process.env.SKIP_ENV_VALIDATION;

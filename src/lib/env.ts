@@ -23,12 +23,14 @@ export const env = createEnv({
     // @polsia:slot env_vars_server start
     // Modules append additional server-side env vars here at install time.
     // @polsia:contrib email start
-    POLSIA_EMAIL_PROXY_URL: z.string().url(),
+    // Optional so the public homepage can render before Polsia email is configured.
+    POLSIA_EMAIL_PROXY_URL: z.string().url().optional(),
     POLSIA_COMPANY_EMAIL: z.string().optional(),
     // @polsia:contrib email end
     // @polsia:contrib better-auth start
-    BETTER_AUTH_SECRET: z.string().min(1),
-    BETTER_AUTH_URL: z.string().url(),
+    // Optional so the public homepage can render before Better Auth is configured.
+    BETTER_AUTH_SECRET: z.string().min(1).optional(),
+    BETTER_AUTH_URL: z.string().url().optional(),
     BETTER_AUTH_TRUSTED_ORIGINS: z.string().optional(),
     POLSIA_OWNER_EMAIL: z.string().optional(),
     POLSIA_GOOGLE_SIGNIN_CLIENT_ID: z.string().min(1).optional(),
@@ -38,6 +40,9 @@ export const env = createEnv({
     POLSIA_API_BASE_URL: z.string().url().default('https://polsia.com'),
     POLSIA_API_KEY: z.string().min(1).optional(),
     POLSIA_API_TOKEN: z.string().min(1).optional(),
+    // The account's own Stripe secret and webhook signing secret. Never a publishable key.
+    STRIPE_SECRET_KEY: z.string().min(1).optional(),
+    STRIPE_WEBHOOK_SECRET: z.string().min(1).optional(),
     // @polsia:contrib stripe-billing end
     // @polsia:contrib file-upload start
     POLSIA_R2_BASE_URL: z.string().url().optional(),
@@ -88,6 +93,8 @@ export const env = createEnv({
     POLSIA_API_BASE_URL: process.env.POLSIA_API_BASE_URL,
     POLSIA_API_KEY: process.env.POLSIA_API_KEY,
     POLSIA_API_TOKEN: process.env.POLSIA_API_TOKEN,
+    STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
+    STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,
     // @polsia:contrib stripe-billing end
     // @polsia:contrib file-upload start
     POLSIA_R2_BASE_URL: process.env.POLSIA_R2_BASE_URL,

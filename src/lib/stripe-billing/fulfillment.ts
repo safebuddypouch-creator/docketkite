@@ -1,7 +1,8 @@
 // @polsia:user-owned
 //
-// Payment fulfillment via Polsia's payment-events feed (no inbound Stripe
-// callbacks): pull events from a cursor, process each idempotently.
+// Legacy cursor helper. Team checkout is fulfilled by the Stripe webhook
+// (`/api/stripe/webhook`), which verifies STRIPE_WEBHOOK_SECRET. This helper
+// no longer calls Polsia.
 //
 // Wire the cursor to durable storage (a one-row Prisma model works):
 //
