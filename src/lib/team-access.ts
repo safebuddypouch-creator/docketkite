@@ -69,6 +69,16 @@ export async function getTeamBillingState(teamId: string): Promise<{
   }
 }
 
+async function isConfiguredOwner(userId: string): Promise<boolean> {
+  const configuredOwnerEmail = env.POLSIA_OWNER_EMAIL?.trim().toLowerCase();
+  if (!configuredOwnerEmail) return false;
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { email: true },
+  });
+  return user?.email.trim().toLowerCase() === configuredOwnerEmail;
+}
+
 async function canUseOwnerTestingAccess(teamId: string, userId: string): Promise<boolean> {
   if (teamId !== OWNER_TESTING_TEAM_ID) return false;
 
@@ -99,15 +109,34 @@ async function canUseOwnerTestingAccess(teamId: string, userId: string): Promise
 }
 
 export async function getTeamAccessState(teamId: string, userId?: string) {
-  const [ownerTesting, team] = await Promise.all([
+  const [ownerTesting, team, ownerPaid] = await Promise.all([
     userId ? canUseOwnerTestingAccess(teamId, userId) : Promise.resolve(false),
     prisma.teamSpace.findUnique({
       where: { id: teamId },
       select: { trialStartedAt: true, trialEndsAt: true },
     }),
+    userId ? isConfiguredOwner(userId) : Promise.resolve(false),
   ]);
   const trialStartedAt = team?.trialStartedAt ?? null;
   const trialEndsAt = team?.trialEndsAt ?? null;
+  // The configured owner account is the site's paid account. Other members
+  // still need a verified subscription.
+  if (ownerPaid) {
+    const entitlement = resolveTeamEntitlement({
+      ownerTesting: false,
+      subscriptionActive: true,
+      trialStartedAt,
+      trialEndsAt,
+      now: new Date(),
+    });
+    return {
+      paymentStatus: 'active' as const,
+      ...entitlement,
+      accessActive: true,
+      trialStartedAt: trialStartedAt?.toISOString() ?? null,
+      trialEndsAt: trialEndsAt?.toISOString() ?? null,
+    };
+  }
   const billing = await getTeamBillingState(teamId);
   const entitlement = resolveTeamEntitlement({
     ownerTesting,

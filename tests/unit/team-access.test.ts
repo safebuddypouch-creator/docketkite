@@ -169,7 +169,7 @@ describe('team subscription access', () => {
   it('honors a verified active subscription on the owner-testing workspace', async () => {
     mocks.findTeam.mockResolvedValue({ ownerTesting: true });
     mocks.findUser.mockResolvedValue({
-      email: 'owner@example.test',
+      email: 'purchaser@example.test',
       emailVerified: true,
       role: 'user',
     });
@@ -177,7 +177,9 @@ describe('team subscription access', () => {
     mocks.findCheckout
       .mockResolvedValueOnce(verifiedCheckout({ userId: 'test-user' }))
       .mockResolvedValueOnce(null);
-    mocks.getSubscriptionStatus.mockResolvedValue(activeSubscription());
+    mocks.getSubscriptionStatus.mockResolvedValue(
+      activeSubscription({ customer_email: 'purchaser@example.test' }),
+    );
 
     await expect(getTeamAccessState(OWNER_TESTING_TEAM_ID, 'test-user')).resolves.toMatchObject({
       paymentStatus: 'active',
@@ -191,7 +193,7 @@ describe('team subscription access', () => {
       }),
     );
     expect(mocks.getSubscriptionStatus).toHaveBeenCalledWith({
-      email: 'owner@example.test',
+      email: 'purchaser@example.test',
       stripeCustomerId: 'cus_123456',
       productKey: TEAM_ACCESS_PRODUCT_KEY,
     });
@@ -324,9 +326,9 @@ describe('team subscription access', () => {
       trialEndsAt: new Date('2026-10-31T12:00:00.000Z'),
     });
     mocks.findCheckout.mockResolvedValueOnce(verifiedCheckout()).mockResolvedValueOnce(null);
-    mocks.findUser.mockResolvedValue({ email: 'owner@example.test' });
+    mocks.findUser.mockResolvedValue({ email: 'purchaser@example.test' });
     mocks.getSubscriptionStatus.mockResolvedValue(
-      activeSubscription({ customer_email: 'owner@example.test' }),
+      activeSubscription({ customer_email: 'purchaser@example.test' }),
     );
 
     await expect(getTeamAccessState('team-1', 'member-1')).resolves.toMatchObject({
@@ -357,6 +359,27 @@ describe('team subscription access', () => {
     });
   });
 
+  it('treats the configured owner account as paid without a Stripe subscription', async () => {
+    mocks.findUser.mockResolvedValue({
+      email: 'owner@example.test',
+      emailVerified: true,
+      role: 'admin',
+    });
+    mocks.findMembership.mockResolvedValue({ role: 'owner' });
+    mocks.findCheckout.mockResolvedValue(null);
+    mocks.findTeam.mockResolvedValue({ trialStartedAt: null, trialEndsAt: null });
+
+    const result = await requireTeamAccess('customer-team', 'owner-user');
+
+    expect(result.response).toBeNull();
+    expect(result).toMatchObject({
+      paymentStatus: 'active',
+      accessActive: true,
+      accessMode: 'paid_subscription',
+    });
+    expect(mocks.getSubscriptionStatus).not.toHaveBeenCalled();
+  });
+
   it('requires membership before checking billing or returning team data', async () => {
     mocks.findMembership.mockResolvedValue(null);
 
@@ -376,7 +399,6 @@ describe('team subscription access', () => {
 
       expect(result.response?.status).toBe(402);
       expect('accessMode' in result).toBe(false);
-      expect(mocks.findUser).not.toHaveBeenCalled();
       expect(mocks.getSubscriptionStatus).not.toHaveBeenCalled();
     },
   );
@@ -384,13 +406,13 @@ describe('team subscription access', () => {
   it('keeps a verified checkout locked when its subscription is inactive', async () => {
     mocks.findCheckout.mockResolvedValueOnce(verifiedCheckout()).mockResolvedValueOnce(null);
     mocks.findMembership.mockResolvedValue({ role: 'owner' });
-    mocks.findUser.mockResolvedValue({ email: 'owner@example.test' });
+    mocks.findUser.mockResolvedValue({ email: 'purchaser@example.test' });
     mocks.getSubscriptionStatus.mockResolvedValue({
       active: false,
       status: 'canceled',
       plan: 'DocketKite Team Access',
       monthly_amount: 299,
-      customer_email: 'owner@example.test',
+      customer_email: 'purchaser@example.test',
       product_key: TEAM_ACCESS_PRODUCT_KEY,
     });
 
@@ -406,7 +428,7 @@ describe('team subscription access', () => {
   it('fails closed when the billing service cannot confirm subscription state', async () => {
     mocks.findCheckout.mockResolvedValueOnce(verifiedCheckout()).mockResolvedValueOnce(null);
     mocks.findMembership.mockResolvedValue({ role: 'owner' });
-    mocks.findUser.mockResolvedValue({ email: 'owner@example.test' });
+    mocks.findUser.mockResolvedValue({ email: 'purchaser@example.test' });
     mocks.getSubscriptionStatus.mockRejectedValue(new Error('billing unavailable'));
 
     const result = await requireTeamAccess('team-1', 'owner-1');
