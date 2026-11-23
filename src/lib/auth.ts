@@ -237,117 +237,136 @@ function configuredAuthSecret(): string {
   return secret;
 }
 
-export const auth = betterAuth({
-  ...authConfig,
-  database: prismaAdapter(prisma, {
-    provider: 'postgresql',
-  }),
-  secret: configuredAuthSecret(),
-  baseURL: resolveBaseURL(),
-  trustedOrigins,
-  // Signup must open a session: paywalls and protected pages right after signup
-  // depend on it. Gate sensitive actions on user.emailVerified instead.
-  emailAndPassword: {
-    ...authConfig.emailAndPassword,
-    enabled: authConfig.emailAndPassword?.enabled ?? false,
-    requireEmailVerification: false,
-    autoSignIn: true,
-  },
-  emailVerification: {
-    sendOnSignUp: true,
-    sendOnSignIn: false,
-    autoSignInAfterVerification: false,
-    ...authConfig.emailVerification,
-    sendVerificationEmail:
-      authConfig.emailVerification?.sendVerificationEmail ??
-      (async ({ user, url }) => {
-        const href = url
-          .replaceAll('&', '&amp;')
-          .replaceAll('"', '&quot;')
-          .replaceAll('<', '&lt;')
-          .replaceAll('>', '&gt;')
-          .replaceAll("'", '&#39;');
-        const result = await sendEmail({
-          to: user.email,
-          subject: 'Verify your email',
-          html: `<p><a href="${href}">Verify your email</a></p>`,
-          text: `Verify your email: ${url}`,
-        });
-        // The proxy can accept a suppressed recipient without sending mail.
-        if (!result.id) throw new Error('Verification email could not be delivered');
-      }),
-  },
-  // better-auth 1.7 answers every auth request with a 500 when the Prisma schema lacks a column
-  // or table the config declares (an app's additionalFields or plugin), which 1.6 did not check.
-  // Keep 1.6's behavior unless the app opts in with advanced.database.validateSchema.
-  advanced: {
-    ...authConfig.advanced,
-    database: {
-      ...authConfig.advanced?.database,
-      validateSchema: authConfig.advanced?.database?.validateSchema ?? false,
-    },
-  },
-  // Better Auth's verification callback can write the pre-verification user to
-  // its cookie cache. Always read authorization state from the session store.
-  session: {
-    ...authConfig.session,
-    cookieCache: { ...authConfig.session?.cookieCache, enabled: false },
-  },
-  databaseHooks: {
-    ...appHooks,
-    user: {
-      ...appHooks?.user,
-      create: {
-        ...appHooks?.user?.create,
-        before: async (user, ctx) => {
-          // Capture the SDK's identity before application hooks can mutate it.
-          const originalEmail = user.email.toLowerCase();
-          const originallyVerified = user.emailVerified === true;
-          const r = await appHooks?.user?.create?.before?.(user, ctx);
-          if (r === false) return false;
-          const base = { ...user, ...(r && typeof r === 'object' && 'data' in r ? r.data : {}) };
-          const emailVerified =
-            originallyVerified &&
-            base.emailVerified === true &&
-            base.email.toLowerCase() === originalEmail;
-          return {
-            data: {
-              ...base,
-              emailVerified,
-              // Unverified identities never receive an administrative role,
-              // including a role supplied by an application create hook.
-              ...(!emailVerified
-                ? { role: 'user' }
-                : ownerEmail === originalEmail
-                  ? { role: 'admin' }
-                  : {}),
-            },
-          };
-        },
-      },
-      update: {
-        ...appHooks?.user?.update,
-        after: async (user, ctx) => {
-          // Verification updates carry the full persisted user. Check the stored
-          // identity again so a stale update cannot promote a changed address.
-          if (ownerEmail && user.emailVerified && user.email.toLowerCase() === ownerEmail) {
-            await prisma.user.updateMany({
-              where: { id: user.id, email: user.email, emailVerified: true },
-              data: { role: 'admin' },
-            });
-          }
-          await appHooks?.user?.update?.after?.(user, ctx);
-        },
-      },
-    },
-  },
-  plugins: [
-    admin({
-      defaultRole: 'user',
-      adminRoles: ['admin'],
+function createAuth() {
+  return betterAuth({
+    ...authConfig,
+    database: prismaAdapter(prisma, {
+      provider: 'postgresql',
     }),
-    previewSessionCsrf,
-    ...googlePlugins,
-    ...(authConfig.plugins ?? []),
-  ],
+    secret: configuredAuthSecret(),
+    baseURL: resolveBaseURL(),
+    trustedOrigins,
+    // Signup must open a session: paywalls and protected pages right after signup
+    // depend on it. Gate sensitive actions on user.emailVerified instead.
+    emailAndPassword: {
+      ...authConfig.emailAndPassword,
+      enabled: authConfig.emailAndPassword?.enabled ?? false,
+      requireEmailVerification: false,
+      autoSignIn: true,
+    },
+    emailVerification: {
+      sendOnSignUp: true,
+      sendOnSignIn: false,
+      autoSignInAfterVerification: false,
+      ...authConfig.emailVerification,
+      sendVerificationEmail:
+        authConfig.emailVerification?.sendVerificationEmail ??
+        (async ({ user, url }) => {
+          const href = url
+            .replaceAll('&', '&amp;')
+            .replaceAll('"', '&quot;')
+            .replaceAll('<', '&lt;')
+            .replaceAll('>', '&gt;')
+            .replaceAll("'", '&#39;');
+          const result = await sendEmail({
+            to: user.email,
+            subject: 'Verify your email',
+            html: `<p><a href="${href}">Verify your email</a></p>`,
+            text: `Verify your email: ${url}`,
+          });
+          // The proxy can accept a suppressed recipient without sending mail.
+          if (!result.id) throw new Error('Verification email could not be delivered');
+        }),
+    },
+    // better-auth 1.7 answers every auth request with a 500 when the Prisma schema lacks a column
+    // or table the config declares (an app's additionalFields or plugin), which 1.6 did not check.
+    // Keep 1.6's behavior unless the app opts in with advanced.database.validateSchema.
+    advanced: {
+      ...authConfig.advanced,
+      database: {
+        ...authConfig.advanced?.database,
+        validateSchema: authConfig.advanced?.database?.validateSchema ?? false,
+      },
+    },
+    // Better Auth's verification callback can write the pre-verification user to
+    // its cookie cache. Always read authorization state from the session store.
+    session: {
+      ...authConfig.session,
+      cookieCache: { ...authConfig.session?.cookieCache, enabled: false },
+    },
+    databaseHooks: {
+      ...appHooks,
+      user: {
+        ...appHooks?.user,
+        create: {
+          ...appHooks?.user?.create,
+          before: async (user, ctx) => {
+            // Capture the SDK's identity before application hooks can mutate it.
+            const originalEmail = user.email.toLowerCase();
+            const originallyVerified = user.emailVerified === true;
+            const r = await appHooks?.user?.create?.before?.(user, ctx);
+            if (r === false) return false;
+            const base = { ...user, ...(r && typeof r === 'object' && 'data' in r ? r.data : {}) };
+            const emailVerified =
+              originallyVerified &&
+              base.emailVerified === true &&
+              base.email.toLowerCase() === originalEmail;
+            return {
+              data: {
+                ...base,
+                emailVerified,
+                // Unverified identities never receive an administrative role,
+                // including a role supplied by an application create hook.
+                ...(!emailVerified
+                  ? { role: 'user' }
+                  : ownerEmail === originalEmail
+                    ? { role: 'admin' }
+                    : {}),
+              },
+            };
+          },
+        },
+        update: {
+          ...appHooks?.user?.update,
+          after: async (user, ctx) => {
+            // Verification updates carry the full persisted user. Check the stored
+            // identity again so a stale update cannot promote a changed address.
+            if (ownerEmail && user.emailVerified && user.email.toLowerCase() === ownerEmail) {
+              await prisma.user.updateMany({
+                where: { id: user.id, email: user.email, emailVerified: true },
+                data: { role: 'admin' },
+              });
+            }
+            await appHooks?.user?.update?.after?.(user, ctx);
+          },
+        },
+      },
+    },
+    plugins: [
+      admin({
+        defaultRole: 'user',
+        adminRoles: ['admin'],
+      }),
+      previewSessionCsrf,
+      ...googlePlugins,
+      ...(authConfig.plugins ?? []),
+    ],
+  });
+}
+
+// Construct Better Auth on first use. The hosted build imports every route while
+// BETTER_AUTH_SECRET is unset, and an eager constructor fails that import.
+let cachedAuth: ReturnType<typeof createAuth> | undefined;
+
+function getAuth() {
+  cachedAuth ??= createAuth();
+  return cachedAuth;
+}
+
+export const auth = new Proxy({} as ReturnType<typeof createAuth>, {
+  get(_target, property) {
+    const instance = getAuth();
+    const value = instance[property as keyof typeof instance];
+    return typeof value === 'function' ? value.bind(instance) : value;
+  },
 });

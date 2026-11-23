@@ -69,17 +69,23 @@ describe('direct Stripe checkout', () => {
     expect(session.stripeSessionId).toBe('cs_test_123');
     expect(session.productIdentity).toBe('full');
     expect(session.platformFee).toBe(0);
-    const params = mocks.create.mock.calls[0][0];
-    expect(params.mode).toBe('subscription');
-    expect(params.payment_method_types).toBeUndefined();
-    expect(params.line_items[0].price_data.unit_amount).toBe(29900);
-    expect(params.line_items[0].price_data.recurring).toEqual({ interval: 'month' });
-    expect(params.line_items[0].price_data.product_data.metadata.product_key).toBe(
-      'docketkite-team-access-monthly',
-    );
-    expect(params.metadata.teamCheckoutId).toBe('checkout-1');
-    expect(params.subscription_data.metadata.checkoutId).toBe(session.checkoutId);
-    expect(params.integration_identifier).toMatch(/^docketkite-team-checkout-[a-z]{8}$/);
+    const params = mocks.create.mock.calls[0]?.[0];
+    expect(params).toMatchObject({
+      mode: 'subscription',
+      line_items: [
+        {
+          price_data: {
+            unit_amount: 29900,
+            recurring: { interval: 'month' },
+            product_data: { metadata: { product_key: 'docketkite-team-access-monthly' } },
+          },
+        },
+      ],
+      metadata: { teamCheckoutId: 'checkout-1' },
+      subscription_data: { metadata: { checkoutId: session.checkoutId } },
+    });
+    expect(params?.payment_method_types).toBeUndefined();
+    expect(params?.integration_identifier).toMatch(/^docketkite-team-checkout-[a-z]{8}$/);
   });
 
   it('rejects a webhook with no signature and does not verify a missing secret', async () => {
