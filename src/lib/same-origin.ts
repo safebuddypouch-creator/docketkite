@@ -85,5 +85,25 @@ export function sameOrigin(request: Request): boolean {
   if (!origin) {
     return false;
   }
-  return allowedOrigins(request).has(origin);
+  if (allowedOrigins(request).has(origin)) {
+    return true;
+  }
+  const exact = exactOrigin(origin);
+  if (!exact) {
+    return false;
+  }
+  // The browser sets this only for a request from the page's own origin.
+  // Another site cannot forge it, and the published host is not in NEXT_PUBLIC_APP_URL.
+  if (request.headers.get('sec-fetch-site') === 'same-origin') {
+    return true;
+  }
+  const forwardedHost = request.headers.get('x-forwarded-host')?.split(',')[0]?.trim();
+  if (!forwardedHost) {
+    return false;
+  }
+  try {
+    return new URL(exact).host === forwardedHost;
+  } catch {
+    return false;
+  }
 }

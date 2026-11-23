@@ -49,12 +49,20 @@ const migrated = run(
   [path.join(root, 'node_modules/prisma/build/index.js'), 'migrate', 'deploy'],
   process.env,
 );
-if (migrated.status !== 0) {
-  if (migrated.output.includes('P3005')) {
-    console.log(
-      'prisma migrate deploy skipped: database already has a schema and no migration history',
-    );
-    process.exit(0);
-  }
+if (migrated.status !== 0 && !migrated.output.includes('P3005')) {
   process.exit(migrated.status);
 }
+if (migrated.status !== 0) {
+  console.log(
+    'prisma migrate deploy skipped: database already has a schema and no migration history',
+  );
+}
+
+// Migrations cover auth and intake only. Team and permit tables come from the
+// Prisma schema, so sync those before the app serves create-team.
+const pushed = run(
+  process.execPath,
+  [path.join(root, 'node_modules/prisma/build/index.js'), 'db', 'push', '--skip-generate'],
+  process.env,
+);
+if (pushed.status !== 0) process.exit(pushed.status);

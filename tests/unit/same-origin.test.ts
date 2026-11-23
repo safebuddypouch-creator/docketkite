@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 const PUBLIC_URL = 'https://acme.polsia.app';
 const INTERNAL_URL = 'http://10.0.0.12:3000/api/creations';
-const DATABASE_URL = 'REDACTED';
+const DATABASE_URL = 'postgresql://user:pass@127.0.0.1:5432/docketkite';
 
 afterEach(() => {
   vi.unstubAllEnvs();
@@ -55,5 +55,42 @@ describe('sameOrigin', () => {
   it('refuses a request without an Origin header', async () => {
     const sameOrigin = await load();
     expect(sameOrigin(post())).toBe(false);
+  });
+
+  it('accepts the published host when the browser says the request is same-origin', async () => {
+    const sameOrigin = await load('http://localhost:3000');
+    const request = new Request(INTERNAL_URL, {
+      method: 'POST',
+      headers: {
+        origin: 'https://docketkite.apps.grok.bot',
+        'sec-fetch-site': 'same-origin',
+      },
+    });
+    expect(sameOrigin(request)).toBe(true);
+  });
+
+  it('accepts the published host from the forwarded host', async () => {
+    const sameOrigin = await load('http://localhost:3000');
+    const request = new Request(INTERNAL_URL, {
+      method: 'POST',
+      headers: {
+        origin: 'https://docketkite.apps.grok.bot',
+        'x-forwarded-host': 'docketkite.apps.grok.bot',
+      },
+    });
+    expect(sameOrigin(request)).toBe(true);
+  });
+
+  it('still refuses a foreign origin that only claims the published host', async () => {
+    const sameOrigin = await load('http://localhost:3000');
+    const request = new Request(INTERNAL_URL, {
+      method: 'POST',
+      headers: {
+        origin: 'https://evil.example',
+        'sec-fetch-site': 'cross-site',
+        'x-forwarded-host': 'docketkite.apps.grok.bot',
+      },
+    });
+    expect(sameOrigin(request)).toBe(false);
   });
 });
