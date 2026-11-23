@@ -62,27 +62,9 @@ export async function POST(req: Request) {
     );
   }
 
-  // Start owner delivery independently of dashboard capture. The module intake
-  // and its company-inbox fallback keep their own order and remain fail-open.
-  const ownerDelivery = sendEmail({
-    to: 'johnchaisson2610@hotmail.com',
-    ...notificationEmail({
-      subject: `New DocketKite question from ${result.data.name}`,
-      title: 'New question for DocketKite',
-      lines: [`From: ${result.data.name} <${result.data.email}>`, result.data.message],
-    }),
-  }).then(
-    (sent) => sent.id.length > 0,
-    () => false,
-  );
-  await Promise.allSettled([notifyCompany(result.data, saved.id), ownerDelivery]);
-
-  if (!(await ownerDelivery)) {
-    return NextResponse.json(
-      { errors: { form: 'We could not send your question just now. Please try again shortly.' } },
-      { status: 502 },
-    );
-  }
+  // The saved row is the record. Company notification stays best-effort and
+  // uses only the configured company inbox. A missing inbox is not an error.
+  await notifyCompany(result.data, saved.id);
 
   return NextResponse.json({ ok: true }, { status: 201 });
 }

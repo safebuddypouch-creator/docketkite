@@ -21,6 +21,7 @@ import {
 } from '@/lib/pdf/client';
 import { loadPdfFonts } from '@/lib/pdf/font-config';
 import { documentSpecSchema } from '@/lib/pdf/schema';
+import { requireAuth } from '@/lib/require-auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -63,6 +64,12 @@ async function readCappedBody(req: Request): Promise<string | null> {
 }
 
 export async function POST(req: Request) {
+  try {
+    await requireAuth(req);
+  } catch (response) {
+    return response as Response;
+  }
+
   const text = await readCappedBody(req);
   if (text === null) {
     return tooLarge(`The request body exceeds ${MAX_BODY_BYTES / (1024 * 1024)} MB.`);
