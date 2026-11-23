@@ -1,0 +1,31 @@
+// @polsia:user-owned — validate a saved permit portal URL before public retrieval.
+import { getOfficialPermitPortalUrl } from '@/lib/contracts/permit';
+import type { FetchPageResponse } from '@/modules/web-search/schema';
+
+export type PermitPortalPageFetcher = (input: {
+  url: string;
+  waitMs: number;
+}) => Promise<FetchPageResponse>;
+
+export type PermitPortalPageRead =
+  | { kind: 'invalid_url' }
+  | { kind: 'missing_permit_number'; sourceUrl: string }
+  | { kind: 'fetched'; sourceUrl: string; page: FetchPageResponse }
+  | { kind: 'failed'; sourceUrl: string; error: unknown };
+
+export async function readPermitPortalPage(
+  savedUrl: string | null,
+  permitNumber: string,
+  fetcher: PermitPortalPageFetcher,
+): Promise<PermitPortalPageRead> {
+  const sourceUrl = getOfficialPermitPortalUrl(savedUrl ?? '');
+  if (!sourceUrl) return { kind: 'invalid_url' };
+  if (!permitNumber.trim()) return { kind: 'missing_permit_number', sourceUrl };
+
+  try {
+    const page = await fetcher({ url: sourceUrl, waitMs: 5000 });
+    return { kind: 'fetched', sourceUrl, page };
+  } catch (error) {
+    return { kind: 'failed', sourceUrl, error };
+  }
+}

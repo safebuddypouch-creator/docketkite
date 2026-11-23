@@ -1,0 +1,79 @@
+// @polsia:user-owned — team memberships and verified workspace access.
+model TeamSpace {
+  id              String   @id @default(cuid())
+  name            String
+  joinCode        String   @unique
+  createdByUserId String
+  ownerTesting    Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  trialStartedAt  DateTime?
+  trialEndsAt     DateTime?
+
+  @@index([createdByUserId])
+}
+
+model TeamMembership {
+  id        String   @id @default(cuid())
+  teamId    String
+  userId    String
+  role      String   @default("purchaser")
+  createdAt DateTime @default(now())
+
+  @@unique([teamId, userId])
+  @@index([userId])
+}
+
+model TeamInvitation {
+  id                String    @id @default(cuid())
+  teamId            String
+  invitedByUserId   String
+  invitedEmail      String
+  tokenHash         String    @unique
+  role              String    @default("project_manager")
+  status            String    @default("pending")
+  expiresAt         DateTime
+  acceptedAt        DateTime?
+  acceptedByUserId  String?
+  createdAt         DateTime  @default(now())
+
+  @@index([teamId, invitedEmail, status])
+  @@index([expiresAt])
+}
+
+model TeamCheckout {
+  id             String    @id @default(cuid())
+  teamId         String
+  userId         String
+  stripeSessionId String?   @unique
+  stripeCheckoutId String?
+  stripeCustomerId String?
+  stripeSubscriptionId String?
+  checkoutItems  Json?
+  status         String    @default("pending")
+  grossAmountUsd Float?
+  verifiedAt     DateTime?
+  createdAt      DateTime  @default(now())
+
+  @@index([teamId, status, createdAt])
+  @@index([userId])
+}
+
+model TeamStatusAlertPreference {
+  id        String   @id @default(cuid())
+  teamId    String   @unique
+  updatedAt DateTime @updatedAt
+
+  recipients TeamStatusAlertRecipient[]
+}
+
+model TeamStatusAlertRecipient {
+  id           String   @id @default(cuid())
+  teamId       String
+  userId       String
+  createdAt    DateTime @default(now())
+  preference   TeamStatusAlertPreference @relation(fields: [teamId], references: [teamId], onDelete: Cascade)
+
+  @@unique([teamId, userId])
+  @@index([teamId])
+  @@index([userId])
+}

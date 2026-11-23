@@ -1,0 +1,179 @@
+// @polsia:user-owned — private permit records, scoped to their creator.
+model Permit {
+  id          String   @id @default(cuid())
+  userId      String
+  teamId      String?
+  assignedProjectManagerUserId String?
+  projectName String
+  address     String
+  permitNumber String  @default("")
+  permitType  String
+  status      String
+  notes       String   @default("")
+  portalUrl   String?
+  portalCurrentStatus String?
+  portalStatusObservedAt DateTime?
+  lastSuccessfulPortalCheckAt DateTime?
+  portalMonitoringInterruptedAt DateTime?
+  portalMonitoringReason String?
+  archivedAt  DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  importIdentity PermitImportIdentity?
+  letters     PermitLetter[]
+  teamNotes   PermitTeamNote[]
+  portalStatusChecks PermitPortalStatusCheck[]
+  portalStatusTransitions PermitPortalStatusTransition[]
+  portalCheckCounter PermitPortalCheckCounter?
+  statusEvents PermitStatusEvent[]
+
+  @@index([userId, archivedAt, updatedAt])
+  @@index([userId])
+  @@index([teamId, archivedAt, updatedAt])
+}
+
+model PermitTeamNote {
+  id           String   @id @default(cuid())
+  permitId     String
+  teamId       String
+  authorUserId String
+  body         String
+  createdAt    DateTime @default(now())
+  permit       Permit   @relation(fields: [permitId], references: [id], onDelete: Cascade)
+
+  @@index([teamId, permitId, createdAt])
+  @@index([authorUserId])
+}
+
+model PermitImportIdentity {
+  id        String   @id @default(cuid())
+  teamId    String
+  sourceKey String
+  permitId  String   @unique
+  createdAt DateTime @default(now())
+  permit    Permit   @relation(fields: [permitId], references: [id], onDelete: Cascade)
+
+  @@unique([teamId, sourceKey])
+  @@index([teamId])
+}
+
+model PermitStatusEvent {
+  id               String   @id @default(cuid())
+  permitId         String
+  status           String
+  falseAlarmReason String?
+  createdAt        DateTime @default(now())
+  permit           Permit   @relation(fields: [permitId], references: [id], onDelete: Cascade)
+
+  @@index([permitId, createdAt])
+}
+
+model PermitPortalStatusCheck {
+  id               String   @id @default(cuid())
+  permitId         String
+  teamId           String
+  permitNumber     String
+  sourceUrl        String?
+  status           String?
+  result           String
+  message          String?
+  checkedAt        DateTime @default(now())
+  requestSequence  Int      @default(0)
+  sourceFetchedAt  DateTime?
+  redlineStatus    String?
+  redlineResult    String   @default("not_connected")
+  redlineMessage   String?
+  permit           Permit   @relation(fields: [permitId], references: [id], onDelete: Cascade)
+  statusTransition PermitPortalStatusTransition?
+
+  @@index([teamId, permitId, checkedAt])
+}
+
+model PermitPortalStatusTransition {
+  id                         String   @id @default(cuid())
+  permitId                   String
+  teamId                     String
+  sourceCheckId              String   @unique
+  permitNumber               String
+  previousStatus             String
+  newStatus                  String
+  sourceUrl                  String
+  checkedAt                  DateTime
+  sourceFetchedAt            DateTime
+  targetedProjectManagerId   String?
+  targetedRole               String   @default("unassigned")
+  textDeliveryStatus         String   @default("unverified")
+  textDeliveryMessage        String
+  checklistMatchStatus       String   @default("unverified")
+  checklistMatchMessage      String
+  createdAt                  DateTime @default(now())
+  permit                     Permit   @relation(fields: [permitId], references: [id], onDelete: Cascade)
+  sourceCheck                PermitPortalStatusCheck @relation(fields: [sourceCheckId], references: [id], onDelete: Cascade)
+
+  @@index([teamId, permitId, sourceFetchedAt])
+}
+
+model PermitPortalCheckCounter {
+  permitId    String   @id
+  sequence    Int      @default(0)
+  checkedAt   DateTime
+  attemptedAt DateTime?
+  permit     Permit   @relation(fields: [permitId], references: [id], onDelete: Cascade)
+}
+
+model PermitLetter {
+  id              String   @id @default(cuid())
+  permitId        String
+  teamId          String
+  uploadedByUserId String
+  uploadId        Int
+  fileKey         String
+  fileUrl         String
+  fileName        String
+  mimeType        String
+  size            Int
+  createdAt       DateTime @default(now())
+  permit          Permit   @relation(fields: [permitId], references: [id], onDelete: Cascade)
+  correctionDraft PermitCorrectionDraft?
+  correctionChecklist PermitCorrectionChecklist?
+  checklistSourceItems PermitCorrectionChecklistItem[] @relation("ChecklistSourceLetter")
+
+  @@index([teamId, permitId, createdAt])
+  @@index([uploadedByUserId])
+}
+
+model PermitCorrectionDraft {
+  id             String   @id @default(cuid())
+  permitLetterId String   @unique
+  status         String   @default("draft")
+  items          Json
+  reviewedItems  Json?
+  fieldErrors    Json?
+  extractedAt    DateTime @default(now())
+  reviewedAt     DateTime?
+  reviewedByUserId String?
+  confirmedAt    DateTime?
+  createdByUserId String
+  permitLetter   PermitLetter @relation(fields: [permitLetterId], references: [id], onDelete: Cascade)
+
+  @@index([createdByUserId, extractedAt])
+}
+
+model PermitUploadIntent {
+  id              String    @id @default(cuid())
+  userId          String
+  teamId          String
+  permitId        String
+  fileIdFloor     Int?      // Legacy column; never used to establish upload provenance.
+  fileName        String
+  mimeType        String
+  size            Int
+  uploadIdHash    String?
+  confirmedFileId Int?
+  createdAt       DateTime  @default(now())
+  expiresAt       DateTime
+  consumedAt      DateTime?
+
+  @@index([userId, teamId, permitId, createdAt])
+  @@index([expiresAt])
+}

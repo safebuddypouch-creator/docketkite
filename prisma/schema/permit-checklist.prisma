@@ -1,0 +1,34 @@
+// @polsia:user-owned — checklists derived from confirmed, user-provided permit letters.
+model PermitCorrectionChecklist {
+  id              String   @id @default(cuid())
+  permitLetterId  String   @unique
+  permitId        String
+  teamId          String
+  createdByUserId String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  permitLetter    PermitLetter @relation(fields: [permitLetterId], references: [id], onDelete: Cascade)
+  items           PermitCorrectionChecklistItem[]
+
+  @@index([teamId, permitId, createdAt])
+  @@index([createdByUserId])
+}
+
+model PermitCorrectionChecklistItem {
+  id             String   @id @default(cuid())
+  checklistId    String
+  sourceLetterId String
+  sourceItemId   String
+  position       Int      @default(0)
+  action         String
+  location       String?
+  planReference  String?
+  completed      Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  checklist      PermitCorrectionChecklist @relation(fields: [checklistId], references: [id], onDelete: Cascade)
+  sourceLetter   PermitLetter @relation("ChecklistSourceLetter", fields: [sourceLetterId], references: [id], onDelete: Cascade)
+
+  @@unique([sourceLetterId, sourceItemId])
+  @@index([checklistId])
+  @@index([sourceLetterId])
+}
