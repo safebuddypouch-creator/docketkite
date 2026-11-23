@@ -324,10 +324,12 @@ function createAuth() {
         create: {
           ...appHooks?.session?.create,
           after: async (session, ctx) => {
+            // A matching address is not proof of control. Promote only a mailbox
+            // Better Auth has already marked verified.
             if (ownerEmail && session.userId) {
               await prisma.user.updateMany({
-                where: { id: session.userId, email: ownerEmail },
-                data: { role: 'admin', emailVerified: true },
+                where: { id: session.userId, email: ownerEmail, emailVerified: true },
+                data: { role: 'admin' },
               });
             }
             await appHooks?.session?.create?.after?.(session, ctx);
@@ -345,20 +347,18 @@ function createAuth() {
             const r = await appHooks?.user?.create?.before?.(user, ctx);
             if (r === false) return false;
             const base = { ...user, ...(r && typeof r === 'object' && 'data' in r ? r.data : {}) };
-            const isOwner = Boolean(ownerEmail) && ownerEmail === originalEmail;
+            // Signup cannot claim a mailbox. Keep a provider's existing
+            // verification only when this hook did not change the address.
             const emailVerified =
-              isOwner ||
-              (originallyVerified &&
-                base.emailVerified === true &&
-                base.email.toLowerCase() === originalEmail);
+              originallyVerified &&
+              base.emailVerified === true &&
+              base.email.toLowerCase() === originalEmail;
             return {
               data: {
                 ...base,
                 emailVerified,
-                // Unverified identities never receive an administrative role,
-                // except the configured owner address, which cannot receive a
-                // verification message while email delivery is unset.
-                ...(isOwner ? { role: 'admin' } : !emailVerified ? { role: 'user' } : {}),
+                // Unverified identities never receive an administrative role.
+                ...(!emailVerified ? { role: 'user' } : {}),
               },
             };
           },

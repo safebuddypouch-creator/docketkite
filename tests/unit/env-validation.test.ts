@@ -37,7 +37,7 @@ test('homepage env loads without Polsia or Better Auth secrets', async () => {
     expect(env.DATABASE_URL).toBe(process.env.DATABASE_URL);
     expect(env.BETTER_AUTH_SECRET).toBeUndefined();
     expect(env.POLSIA_EMAIL_PROXY_URL).toBeUndefined();
-    expect(env.POLSIA_OWNER_EMAIL).toBe('johnchaisson2610@gmail.com');
+    expect(env.POLSIA_OWNER_EMAIL).toBeUndefined();
   } finally {
     if (prevDb === undefined) delete process.env.DATABASE_URL;
     else process.env.DATABASE_URL = prevDb;

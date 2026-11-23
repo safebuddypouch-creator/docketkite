@@ -69,14 +69,18 @@ export async function getTeamBillingState(teamId: string): Promise<{
   }
 }
 
-async function isConfiguredOwner(userId: string): Promise<boolean> {
+async function isVerifiedConfiguredOwner(userId: string): Promise<boolean> {
   const configuredOwnerEmail = env.POLSIA_OWNER_EMAIL?.trim().toLowerCase();
   if (!configuredOwnerEmail) return false;
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { email: true },
+    select: { email: true, emailVerified: true, role: true },
   });
-  return user?.email.trim().toLowerCase() === configuredOwnerEmail;
+  return Boolean(
+    user?.emailVerified &&
+      user.role === 'admin' &&
+      user.email.trim().toLowerCase() === configuredOwnerEmail,
+  );
 }
 
 async function canUseOwnerTestingAccess(teamId: string, userId: string): Promise<boolean> {
@@ -115,12 +119,13 @@ export async function getTeamAccessState(teamId: string, userId?: string) {
       where: { id: teamId },
       select: { trialStartedAt: true, trialEndsAt: true },
     }),
-    userId ? isConfiguredOwner(userId) : Promise.resolve(false),
+    userId ? isVerifiedConfiguredOwner(userId) : Promise.resolve(false),
   ]);
   const trialStartedAt = team?.trialStartedAt ?? null;
   const trialEndsAt = team?.trialEndsAt ?? null;
-  // The configured owner account is the site's paid account. Other members
-  // still need a verified subscription.
+  // Complimentary access is only for the configured owner after the mailbox
+  // is verified and the admin role has been granted. Matching the address is
+  // not enough, and every other member still needs a subscription.
   if (ownerPaid) {
     const entitlement = resolveTeamEntitlement({
       ownerTesting: false,

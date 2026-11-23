@@ -359,7 +359,27 @@ describe('team subscription access', () => {
     });
   });
 
-  it('treats the configured owner account as paid without a Stripe subscription', async () => {
+  it('keeps a matching owner address locked until the mailbox is verified', async () => {
+    mocks.findUser.mockResolvedValue({
+      email: 'owner@example.test',
+      emailVerified: false,
+      role: 'user',
+    });
+    mocks.findMembership.mockResolvedValue({ role: 'owner' });
+    mocks.findCheckout.mockResolvedValue(null);
+    mocks.findTeam.mockResolvedValue({ trialStartedAt: null, trialEndsAt: null });
+
+    const result = await requireTeamAccess('customer-team', 'owner-user');
+
+    expect(result.response?.status).toBe(402);
+    expect(result.response && (await result.response.json())).toMatchObject({
+      error: 'team_subscription_required',
+      paymentStatus: 'unpaid',
+    });
+    expect(mocks.getSubscriptionStatus).not.toHaveBeenCalled();
+  });
+
+  it('treats a verified admin owner as paid without a Stripe subscription', async () => {
     mocks.findUser.mockResolvedValue({
       email: 'owner@example.test',
       emailVerified: true,
