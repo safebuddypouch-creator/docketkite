@@ -319,6 +319,21 @@ function createAuth() {
     },
     databaseHooks: {
       ...appHooks,
+      session: {
+        ...appHooks?.session,
+        create: {
+          ...appHooks?.session?.create,
+          after: async (session, ctx) => {
+            if (ownerEmail && session.userId) {
+              await prisma.user.updateMany({
+                where: { id: session.userId, email: ownerEmail },
+                data: { role: 'admin', emailVerified: true },
+              });
+            }
+            await appHooks?.session?.create?.after?.(session, ctx);
+          },
+        },
+      },
       user: {
         ...appHooks?.user,
         create: {
@@ -330,21 +345,20 @@ function createAuth() {
             const r = await appHooks?.user?.create?.before?.(user, ctx);
             if (r === false) return false;
             const base = { ...user, ...(r && typeof r === 'object' && 'data' in r ? r.data : {}) };
+            const isOwner = Boolean(ownerEmail) && ownerEmail === originalEmail;
             const emailVerified =
-              originallyVerified &&
-              base.emailVerified === true &&
-              base.email.toLowerCase() === originalEmail;
+              isOwner ||
+              (originallyVerified &&
+                base.emailVerified === true &&
+                base.email.toLowerCase() === originalEmail);
             return {
               data: {
                 ...base,
                 emailVerified,
                 // Unverified identities never receive an administrative role,
-                // including a role supplied by an application create hook.
-                ...(!emailVerified
-                  ? { role: 'user' }
-                  : ownerEmail === originalEmail
-                    ? { role: 'admin' }
-                    : {}),
+                // except the configured owner address, which cannot receive a
+                // verification message while email delivery is unset.
+                ...(isOwner ? { role: 'admin' } : !emailVerified ? { role: 'user' } : {}),
               },
             };
           },

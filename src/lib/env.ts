@@ -32,7 +32,8 @@ export const env = createEnv({
     BETTER_AUTH_SECRET: z.string().min(1).optional(),
     BETTER_AUTH_URL: z.string().url().optional(),
     BETTER_AUTH_TRUSTED_ORIGINS: z.string().optional(),
-    POLSIA_OWNER_EMAIL: z.string().optional(),
+    // The site owner. This address is granted the admin role.
+    POLSIA_OWNER_EMAIL: z.string().email().default('johnchaisson2610@gmail.com'),
     POLSIA_GOOGLE_SIGNIN_CLIENT_ID: z.string().min(1).optional(),
     GOOGLE_SIGNIN_CLIENT_SECRET: z.string().min(1).optional(),
     // @polsia:contrib better-auth end
