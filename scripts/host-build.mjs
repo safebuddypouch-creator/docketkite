@@ -8,19 +8,35 @@ import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
-function run(command, args, env) {
+function run(command, args, env, capture) {
   const result = spawnSync(command, args, {
     cwd: root,
     env,
     encoding: 'utf8',
+    // Capturing Next's log used to stop the publish once the log passed 1MB.
+    maxBuffer: 32 * 1024 * 1024,
+    stdio: capture ? ['ignore', 'pipe', 'pipe'] : 'inherit',
   });
   const output = `${result.stdout ?? ''}${result.stderr ?? ''}`;
-  if (output) process.stdout.write(output);
+  if (capture && output) process.stdout.write(output);
   if (result.error) {
     console.error(result.error.message);
     return { status: 1, output: `${output}${result.error.message}` };
   }
   return { status: result.status ?? 1, output };
+}
+
+function runPrisma(args) {
+  const bin = path.join(root, 'node_modules/prisma/build/index.js');
+  let last = { status: 1, output: '' };
+  for (let attempt = 1; attempt <= 3; attempt += 1) {
+    last = run(process.execPath, [bin, ...args], process.env, true);
+    const transient = /P1001|P1002|P1017|Can't reach database|timed out/i.test(last.output);
+    if (last.status === 0 || !transient || attempt === 3) return last;
+    console.log(`prisma ${args.join(' ')} will retry after a connection error`);
+    spawnSync('sleep', ['2'], { stdio: 'ignore' });
+  }
+  return last;
 }
 
 const nextEnv = { ...process.env };
@@ -32,6 +48,7 @@ const built = run(
   process.execPath,
   [path.join(root, 'node_modules/next/dist/bin/next'), 'build'],
   nextEnv,
+  false,
 );
 if (built.status !== 0) process.exit(built.status);
 
@@ -44,13 +61,11 @@ if (!(process.env.DATABASE_URL ?? '').trim()) {
 // no migration history. Prisma then refuses migrate deploy with P3005 and the
 // publish build exits 1. Schema sync stays on startup; only a real migration
 // failure should stop the build.
-const migrated = run(
-  process.execPath,
-  [path.join(root, 'node_modules/prisma/build/index.js'), 'migrate', 'deploy'],
-  process.env,
-);
-if (migrated.status !== 0 && !migrated.output.includes('P3005')) {
-  process.exit(migrated.status);
+const migrated = runPrisma(['migrate', 'deploy']);
+const unbaselined =
+  migrated.output.includes('P3005') || /schema is not empty/i.test(migrated.output);
+if (migrated.status !== 0 && !unbaselined) {
+  process.exit(migrated.status ?? 1);
 }
 if (migrated.status !== 0) {
   console.log(
@@ -60,9 +75,5 @@ if (migrated.status !== 0) {
 
 // Migrations cover auth and intake only. Team and permit tables come from the
 // Prisma schema, so sync those before the app serves create-team.
-const pushed = run(
-  process.execPath,
-  [path.join(root, 'node_modules/prisma/build/index.js'), 'db', 'push', '--skip-generate'],
-  process.env,
-);
-if (pushed.status !== 0) process.exit(pushed.status);
+const pushed = runPrisma(['db', 'push', '--skip-generate']);
+if (pushed.status !== 0) process.exit(pushed.status ?? 1);
