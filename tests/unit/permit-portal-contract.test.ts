@@ -71,6 +71,14 @@ describe('City of Tampa permit portal URL contract', () => {
     expect(PermitFields.parse({ ...requiredFields, portalUrl: tampaRecordUrl }).portalUrl).toBe(
       tampaRecordUrl,
     );
+    for (const portalUrl of [
+      // Accela search results and shared links often change query-name casing.
+      'https://aca-prod.accela.com/TAMPA/Cap/CapDetail.aspx?module=Building&TabName=Building&capID1=26CAP&capID2=00000&capID3=02UTH&agencyCode=TAMPA',
+      'https://aca-prod.accela.com/TAMPA/Cap/CapDetail.aspx?Module=Building&CapID1=26CAP&CapID2=00000&CapID3=02UTH&agencyCode=tampa',
+      'https://aca-prod.accela.com:443/TAMPA/Cap/CapDetail.aspx?Module=Building&capID1=26CAP&capID2=00000&capID3=02UTH&agencyCode=TAMPA',
+    ]) {
+      expect(PermitFields.parse({ ...requiredFields, portalUrl }).portalUrl).toBe(portalUrl);
+    }
   });
 
   it('rejects other jurisdictions, portal landing/search pages, malformed links, and forged hosts', () => {
@@ -83,7 +91,7 @@ describe('City of Tampa permit portal URL contract', () => {
       'http://aca-prod.accela.com/TAMPA/Cap/CapDetail.aspx?Module=Building&capID1=26CAP&capID2=00000&capID3=02UTH&agencyCode=TAMPA',
       'https://aca-prod.accela.com.attacker.example/TAMPA/Cap/CapDetail.aspx?Module=Building&capID1=26CAP&capID2=00000&capID3=02UTH&agencyCode=TAMPA',
       'https://user@aca-prod.accela.com/TAMPA/Cap/CapDetail.aspx?Module=Building&capID1=26CAP&capID2=00000&capID3=02UTH&agencyCode=TAMPA',
-      'https://aca-prod.accela.com:443/TAMPA/Cap/CapDetail.aspx?Module=Building&capID1=26CAP&capID2=00000&capID3=02UTH&agencyCode=TAMPA',
+      'https://aca-prod.accela.com:8443/TAMPA/Cap/CapDetail.aspx?Module=Building&capID1=26CAP&capID2=00000&capID3=02UTH&agencyCode=TAMPA',
       'https://aca-prod.accela.com/TAMPA/Cap/CapDetail.aspx?Module=Building&capID1=26CAP&capID2=00000&agencyCode=TAMPA',
       'https://aca-prod.accela.com/TAMPA/Cap/CapDetail.aspx?Module=Building&capID1=26CAP&capID2=00000&capID3=02UTH&agencyCode=TAMPA&agencyCode=TAMPA',
       'https://aca-prod.accela.com/TAMPA/Cap/CapDetail.aspx?Module=Building&capID1=26CAP&capID2=00000&capID3=02UTH&agencyCode=TAMPA%20OTHER',
@@ -95,7 +103,12 @@ describe('City of Tampa permit portal URL contract', () => {
 
   it('keeps historical links loadable while excluding them from active coverage', () => {
     const oldLink = 'https://permits.sanjoseca.gov/record/2026-010101';
-    const legacyPermit = { ...requiredFields, id: 'legacy-1', teamId: 'team-1', portalUrl: oldLink };
+    const legacyPermit = {
+      ...requiredFields,
+      id: 'legacy-1',
+      teamId: 'team-1',
+      portalUrl: oldLink,
+    };
 
     expect(PermitFields.shape.portalUrl.safeParse(oldLink).success).toBe(false);
     expect(PermitItem.shape.portalUrl.parse(oldLink)).toBe(oldLink);
@@ -121,11 +134,14 @@ describe('City of Tampa permit portal URL contract', () => {
   });
 
   it('does not treat a Tampa-looking job address as jurisdiction proof', () => {
-    expect(PermitFields.safeParse({ ...requiredFields, address: '1 Tampa Bay Way, Tampa, FL' }).success).toBe(true);
+    expect(
+      PermitFields.safeParse({ ...requiredFields, address: '1 Tampa Bay Way, Tampa, FL' }).success,
+    ).toBe(true);
     expect(
       PermitFields.safeParse({
         ...requiredFields,
-        portalUrl: 'https://aca-prod.accela.com/HILLSBOROUGH/Cap/CapDetail.aspx?Module=Building&capID1=26CAP&capID2=00000&capID3=02UTH&agencyCode=HILLSBOROUGH',
+        portalUrl:
+          'https://aca-prod.accela.com/HILLSBOROUGH/Cap/CapDetail.aspx?Module=Building&capID1=26CAP&capID2=00000&capID3=02UTH&agencyCode=HILLSBOROUGH',
       }).success,
     ).toBe(false);
   });
