@@ -29,6 +29,9 @@ import { APIError } from 'better-auth/api';
 import { sendEmail } from '@/lib/email/send';
 import { env } from '@/lib/env';
 
+const PUBLISHED_ORIGIN = 'https://docketkite.apps.grok.bot';
+const PUBLISHED_HOST = /(?:^|\.)apps\.grok\.bot$|(?:^|\.)(?:staging\.)?polsia\.(?:app|io)$/;
+
 function verificationHref(url: string): string {
   return url
     .replaceAll('&', '&amp;')
@@ -38,15 +41,67 @@ function verificationHref(url: string): string {
     .replaceAll("'", '&#39;');
 }
 
+function isLoopback(hostname: string): boolean {
+  return hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1';
+}
+
+function publishedOrigin(request?: Request): string {
+  const origin = request?.headers.get('origin');
+  if (origin) {
+    try {
+      const url = new URL(origin);
+      if (url.protocol === 'https:' && PUBLISHED_HOST.test(url.hostname)) return url.origin;
+    } catch {
+      // Keep the known live origin.
+    }
+  }
+  const forwarded = request?.headers.get('x-forwarded-host')?.split(',')[0]?.trim();
+  const forwardedHost = forwarded?.split(':')[0];
+  if (forwardedHost && PUBLISHED_HOST.test(forwardedHost)) return `https://${forwardedHost}`;
+  return PUBLISHED_ORIGIN;
+}
+
+/** Auth builds the link from the local fallback when the public URL is unset. */
+function publicVerificationUrl(url: string, request?: Request): string {
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    return url;
+  }
+  if (!isLoopback(parsed.hostname)) return url;
+
+  const target = new URL(publishedOrigin(request));
+  parsed.protocol = target.protocol;
+  parsed.hostname = target.hostname;
+  parsed.port = target.port;
+  const callback = parsed.searchParams.get('callbackURL');
+  if (callback) {
+    try {
+      const callbackUrl = new URL(callback);
+      if (isLoopback(callbackUrl.hostname)) {
+        callbackUrl.protocol = target.protocol;
+        callbackUrl.hostname = target.hostname;
+        callbackUrl.port = target.port;
+        parsed.searchParams.set('callbackURL', callbackUrl.toString());
+      }
+    } catch {
+      // A relative callback stays on the rewritten host.
+    }
+  }
+  return parsed.toString();
+}
+
 export const authConfig: BetterAuthOptions = {
   emailAndPassword: {
     enabled: true,
   },
   emailVerification: {
-    sendVerificationEmail: async ({ user, url }) => {
-      const href = verificationHref(url);
+    sendVerificationEmail: async ({ user, url }, request) => {
+      const link = publicVerificationUrl(url, request);
+      const href = verificationHref(link);
       const html = `<p><a href="${href}">Verify your email</a></p>`;
-      const text = `Verify your email: ${url}`;
+      const text = `Verify your email: ${link}`;
       if (env.RESEND_API_KEY) {
         const response = await fetch('https://api.resend.com/emails', {
           method: 'POST',

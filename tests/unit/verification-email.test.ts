@@ -43,6 +43,32 @@ describe('verification email', () => {
     expect(body.from).toBe('DocketKite <noreply@docketkitepermits.com>');
   });
 
+  it('rewrites a localhost verification link to the published site', async () => {
+    await authConfig.emailVerification?.sendVerificationEmail?.(
+      {
+        user: {
+          id: 'user-1',
+          createdAt: new Date('2026-11-24T00:00:00.000Z'),
+          updatedAt: new Date('2026-11-24T00:00:00.000Z'),
+          email: 'owner@example.test',
+          emailVerified: false,
+          name: 'Owner',
+        },
+        url: 'http://localhost:3000/api/auth/verify-email?token=abc&callbackURL=http%3A%2F%2Flocalhost%3A3000%2Fdashboard',
+        token: 'abc',
+      },
+      new Request('http://localhost:3000/api/auth/send-verification-email', {
+        headers: { origin: 'https://docketkite.apps.grok.bot' },
+      }),
+    );
+
+    const init = vi.mocked(fetch).mock.calls[0]?.[1];
+    const body = JSON.parse(String(init && 'body' in init ? init.body : '{}')) as { text?: string };
+    expect(body.text).toContain('https://docketkite.apps.grok.bot/api/auth/verify-email?token=abc');
+    expect(body.text).toContain('callbackURL=https%3A%2F%2Fdocketkite.apps.grok.bot%2Fdashboard');
+    expect(body.text).not.toContain('localhost');
+  });
+
   it('reports when Resend will only email the account that owns it', async () => {
     vi.stubGlobal(
       'fetch',
