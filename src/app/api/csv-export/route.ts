@@ -1,9 +1,10 @@
-// @polsia:user-owned
+// @polsia:user-owned — permit CSV export gated by team membership and paid access.
 
 import 'server-only';
 import { PermitExportFilters } from '@/lib/contracts/permit-export';
 import { authorizeCsvExport, csvExportSources } from '@/lib/csv-export/sources.server';
 import { requireAuth } from '@/lib/require-auth';
+import { sameOrigin } from '@/lib/same-origin';
 import { siteUrl } from '@/lib/site';
 import { requireTeamAccess } from '@/lib/team-access';
 import { CSV_EXPORT_ERRORS, CSV_EXPORT_LIMITS } from '@/modules/csv-export/contracts';
@@ -11,6 +12,10 @@ import { createCsvExportHandlers } from '@/modules/csv-export/server';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
+
+// Framework handler only accepts one exact Origin string. We validate with
+// sameOrigin() (which trusts the live apps.grok.bot host), then rewrite Origin
+// to this baked value before calling the handler.
 const allowedOrigin = new URL(siteUrl).origin;
 const handlers = createCsvExportHandlers({
   sources: csvExportSources,
@@ -66,8 +71,19 @@ async function readBoundedBody(request: Request): Promise<Uint8Array | Response>
   return body;
 }
 
+function requestForHandler(request: Request, extraHeaders?: Record<string, string>): Request {
+  const headers = new Headers(request.headers);
+  headers.set('origin', allowedOrigin);
+  if (extraHeaders) {
+    for (const [name, value] of Object.entries(extraHeaders)) headers.set(name, value);
+  }
+  return new Request(request, { headers });
+}
+
 export async function POST(request: Request) {
-  if (request.headers.get('origin') !== allowedOrigin) return handlers.POST(request);
+  if (!sameOrigin(request)) {
+    return moduleError('FORBIDDEN', 403);
+  }
 
   const body = await readBoundedBody(request);
   if (body instanceof Response) return body;
@@ -76,14 +92,16 @@ export async function POST(request: Request) {
   try {
     parsedBody = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(body));
   } catch {
-    return handlers.POST(request);
+    return handlers.POST(requestForHandler(request));
   }
 
   if (!parsedBody || typeof parsedBody !== 'object') {
-    return handlers.POST(request);
+    return handlers.POST(requestForHandler(request));
   }
   const bodyRecord = parsedBody as Record<string, unknown>;
-  if (bodyRecord.sourceId !== 'permits') return handlers.POST(request);
+  if (bodyRecord.sourceId !== 'permits') {
+    return handlers.POST(requestForHandler(request));
+  }
 
   const filterResult = PermitExportFilters.safeParse(bodyRecord.filters);
   if (!filterResult.success) return moduleError('INVALID_FILTERS');
@@ -97,15 +115,15 @@ export async function POST(request: Request) {
 
   const access = await requireTeamAccess(filterResult.data.teamId, user.id);
   if (access.response) {
-    return moduleError(
-      access.response.status === 403 ? 'FORBIDDEN' : 'FORBIDDEN',
-      access.response.status,
-    );
+    // Map unpaid (402) and membership/origin denials to FORBIDDEN so the UI
+    // can show the paid-membership copy; keep the HTTP status for clients.
+    return moduleError('FORBIDDEN', access.response.status);
   }
 
-  const headers = new Headers(request.headers);
-  headers.set('x-polsia-csv-actor-id', user.id);
-  headers.set('x-polsia-csv-team-id', filterResult.data.teamId);
-  const scopedRequest = new Request(request, { headers });
-  return handlers.POST(scopedRequest);
+  return handlers.POST(
+    requestForHandler(request, {
+      'x-polsia-csv-actor-id': user.id,
+      'x-polsia-csv-team-id': filterResult.data.teamId,
+    }),
+  );
 }
