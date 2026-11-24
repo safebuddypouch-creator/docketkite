@@ -1,19 +1,50 @@
 'use client';
 
-import { type FormEvent, useState } from 'react';
+import { type FormEvent, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { apiFetch } from '@/lib/api-client';
-import { useIsAdmin } from '@/lib/auth-client';
+import { useIsAdmin, useSession } from '@/lib/auth-client';
+import { OwnerAccessEligibility } from '@/lib/contracts/owner-access';
 
 export function OwnerAccessCode() {
   const isAdmin = useIsAdmin();
+  const { data: session } = useSession();
+  const [eligible, setEligible] = useState(false);
+  const [checking, setChecking] = useState(true);
   const [code, setCode] = useState('');
   const [pending, setPending] = useState(false);
   const [error, setError] = useState('');
 
-  if (isAdmin) return null;
+  const user = session?.user;
+
+  useEffect(() => {
+    let mounted = true;
+    if (isAdmin || !user) {
+      setEligible(false);
+      setChecking(false);
+      return;
+    }
+
+    setChecking(true);
+    void apiFetch('/api/account/owner-access', { schema: OwnerAccessEligibility })
+      .then((result) => {
+        if (mounted) setEligible(result.eligible);
+      })
+      .catch(() => {
+        if (mounted) setEligible(false);
+      })
+      .finally(() => {
+        if (mounted) setChecking(false);
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, [isAdmin, user]);
+
+  if (isAdmin || checking || !eligible) return null;
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -44,7 +75,7 @@ export function OwnerAccessCode() {
         <CardTitle className="text-base">Owner access</CardTitle>
         <CardDescription>
           Enter the owner access code to turn on admin and paid access for this account. It is not
-          your sign-in password.
+          your sign-in password. Invited teammates do not use this code.
         </CardDescription>
       </CardHeader>
       <CardContent>
