@@ -10,11 +10,17 @@ export function ownerAccessCodeConfigured(): boolean {
   return Boolean(code && code.length >= MINIMUM_CODE_LENGTH && env.POLSIA_OWNER_EMAIL);
 }
 
+/** True only for the configured owner mailbox. Invited teammates never qualify. */
+export function ownerAccessEligible(email: string): boolean {
+  const expectedEmail = env.POLSIA_OWNER_EMAIL?.trim().toLowerCase();
+  if (!expectedEmail || !ownerAccessCodeConfigured()) return false;
+  return email.trim().toLowerCase() === expectedEmail;
+}
+
 export function ownerAccessMatches(email: string, code: string): boolean {
   const expectedCode = env.POLSIA_OWNER_ACCESS_CODE;
-  const expectedEmail = env.POLSIA_OWNER_EMAIL?.trim().toLowerCase();
-  if (!expectedCode || expectedCode.length < MINIMUM_CODE_LENGTH || !expectedEmail) return false;
-  if (email.trim().toLowerCase() !== expectedEmail) return false;
+  if (!expectedCode || expectedCode.length < MINIMUM_CODE_LENGTH) return false;
+  if (!ownerAccessEligible(email)) return false;
   return sameSecret(code, expectedCode);
 }
 

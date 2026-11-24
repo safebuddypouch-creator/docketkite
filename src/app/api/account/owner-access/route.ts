@@ -1,7 +1,11 @@
 // @polsia:user-owned — grant admin to the configured owner after they present the access code.
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
-import { ownerAccessCodeConfigured, ownerAccessMatches } from '@/lib/owner-access';
+import {
+  ownerAccessCodeConfigured,
+  ownerAccessEligible,
+  ownerAccessMatches,
+} from '@/lib/owner-access';
 import { requireAuth, type SessionUser } from '@/lib/require-auth';
 import { sameOrigin } from '@/lib/same-origin';
 
@@ -10,6 +14,19 @@ export const dynamic = 'force-dynamic';
 const attempts = new Map<string, { count: number; resetAt: number }>();
 const MAX_ATTEMPTS = 5;
 const WINDOW_MS = 15 * 60 * 1000;
+
+export async function GET(request: Request) {
+  let user: SessionUser;
+  try {
+    user = await requireAuth(request);
+  } catch (response) {
+    return response as Response;
+  }
+
+  return NextResponse.json({
+    eligible: ownerAccessEligible(user.email) && user.role !== 'admin',
+  });
+}
 
 function limited(userId: string): boolean {
   const now = Date.now();
