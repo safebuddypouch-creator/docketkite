@@ -24,12 +24,13 @@ function isOfficialTampaPermitRecordUrl(value: string): boolean {
   try {
     const url = new URL(value);
     const authority = value.match(/^https:\/\/([^/?#]*)/i)?.[1];
+    if (!authority) return false;
     const hostname = url.hostname.toLowerCase();
+    const authorityHost = authority.toLowerCase();
     const authorityOk =
-      Boolean(authority) &&
       !authority.includes('@') &&
       !authority.includes('\\') &&
-      (authority.toLowerCase() === hostname || authority.toLowerCase() === `${hostname}:443`);
+      (authorityHost === hostname || authorityHost === `${hostname}:443`);
     if (!authorityOk) return false;
     if (url.port && url.port !== '443') return false;
     const labels = hostname.split('.');
