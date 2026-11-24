@@ -11,7 +11,15 @@ const fixtureUserIds: string[] = [];
 const fixtureTeamIds: string[] = [];
 const fixtureContexts: BrowserContext[] = [];
 const subscriptionStatePaths: string[] = [];
-const ownerPassword = 'Qa-Owner-Testing-Account-9a';
+function ownerPassword(): string {
+  const password = process.env.E2E_OWNER_PASSWORD?.trim();
+  if (!password) {
+    throw new Error(
+      'E2E_OWNER_PASSWORD must be provided outside the repository for the owner sign-in test.',
+    );
+  }
+  return password;
+}
 const EMAIL_CAPTURE_PATH = '/tmp/polsia-permit-status-email-capture.ndjson';
 
 interface CapturedEmail {
@@ -67,7 +75,7 @@ async function signInConfiguredOwner(page: Page, origin: string) {
 
   const signup = await page.request.post(`${origin}/api/auth/sign-up/email`, {
     headers: { origin },
-    data: { name: 'DocketKite Test Owner', email, password: ownerPassword },
+    data: { name: 'DocketKite Test Owner', email, password: ownerPassword() },
   });
   if (signup.status() === 200) {
     const initialSession = await page.request.get(`${origin}/api/auth/get-session`, {
@@ -83,7 +91,7 @@ async function signInConfiguredOwner(page: Page, origin: string) {
   for (let attempt = 0; attempt < 4; attempt += 1) {
     const signin = await page.request.post(`${origin}/api/auth/sign-in/email`, {
       headers: { origin },
-      data: { email, password: ownerPassword, callbackURL: '/' },
+      data: { email, password: ownerPassword(), callbackURL: '/' },
     });
     signinStatus = signin.status();
     if (signinStatus === 200) break;
