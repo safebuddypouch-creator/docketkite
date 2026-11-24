@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
   findCheckout: vi.fn(),
   findTeam: vi.fn(),
   findUser: vi.fn(),
+  findOwnerAdmin: vi.fn(),
   getSubscriptionStatus: vi.fn(),
 }));
 
@@ -16,7 +17,7 @@ vi.mock('@/lib/db', () => ({
     teamMembership: { findUnique: mocks.findMembership },
     teamCheckout: { findFirst: mocks.findCheckout },
     teamSpace: { findUnique: mocks.findTeam },
-    user: { findUnique: mocks.findUser },
+    user: { findUnique: mocks.findUser, findFirst: mocks.findOwnerAdmin },
   },
 }));
 vi.mock('@/lib/stripe-billing/client', () => ({
@@ -360,11 +361,7 @@ describe('team subscription access', () => {
   });
 
   it('keeps a matching owner address locked until that account is an admin', async () => {
-    mocks.findUser.mockResolvedValue({
-      email: 'owner@example.test',
-      emailVerified: false,
-      role: 'user',
-    });
+    mocks.findOwnerAdmin.mockResolvedValue(null);
     mocks.findMembership.mockResolvedValue({ role: 'owner' });
     mocks.findCheckout.mockResolvedValue(null);
     mocks.findTeam.mockResolvedValue({ trialStartedAt: null, trialEndsAt: null });
@@ -380,11 +377,7 @@ describe('team subscription access', () => {
   });
 
   it('treats the configured admin owner as paid without a Stripe subscription', async () => {
-    mocks.findUser.mockResolvedValue({
-      email: 'owner@example.test',
-      emailVerified: false,
-      role: 'admin',
-    });
+    mocks.findOwnerAdmin.mockResolvedValue({ id: 'owner-user' });
     mocks.findMembership.mockResolvedValue({ role: 'owner' });
     mocks.findCheckout.mockResolvedValue(null);
     mocks.findTeam.mockResolvedValue({ trialStartedAt: null, trialEndsAt: null });
@@ -396,6 +389,26 @@ describe('team subscription access', () => {
       paymentStatus: 'active',
       accessActive: true,
       accessMode: 'paid_subscription',
+    });
+    expect(mocks.getSubscriptionStatus).not.toHaveBeenCalled();
+  });
+
+  it('lets an invited teammate see permits when the configured admin owner is on the team', async () => {
+    mocks.findOwnerAdmin.mockResolvedValue({ id: 'owner-user' });
+    mocks.findMembership
+      .mockResolvedValueOnce({ role: 'purchaser' })
+      .mockResolvedValueOnce({ userId: 'owner-user' });
+    mocks.findCheckout.mockResolvedValue(null);
+    mocks.findTeam.mockResolvedValue({ trialStartedAt: null, trialEndsAt: null });
+
+    const result = await requireTeamAccess('customer-team', 'hotmail-user');
+
+    expect(result.response).toBeNull();
+    expect(result).toMatchObject({
+      paymentStatus: 'active',
+      accessActive: true,
+      accessMode: 'paid_subscription',
+      membership: { role: 'purchaser' },
     });
     expect(mocks.getSubscriptionStatus).not.toHaveBeenCalled();
   });
@@ -412,6 +425,7 @@ describe('team subscription access', () => {
   it.each(['owner', 'project_manager', 'purchaser'])(
     'does not let a %s membership bypass verified payment and active subscription',
     async (role) => {
+      mocks.findOwnerAdmin.mockResolvedValue(null);
       mocks.findMembership.mockResolvedValue({ role });
       mocks.findCheckout.mockResolvedValue(null);
 

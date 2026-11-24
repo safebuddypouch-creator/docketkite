@@ -69,18 +69,27 @@ export async function getTeamBillingState(teamId: string): Promise<{
   }
 }
 
-async function configuredOwnerIsAdmin(userId: string): Promise<boolean> {
+/**
+ * When the configured site owner is already an admin and belongs to a team,
+ * that whole team gets complimentary paid access. Invited members stay ordinary
+ * roles (purchaser / project manager) and are never promoted to app admin.
+ */
+async function teamHasConfiguredOwnerAdmin(teamId: string): Promise<boolean> {
   const configuredOwnerEmail = env.POLSIA_OWNER_EMAIL?.trim().toLowerCase();
   if (!configuredOwnerEmail) return false;
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { email: true, role: true },
+  const owner = await prisma.user.findFirst({
+    where: {
+      email: { equals: configuredOwnerEmail, mode: 'insensitive' },
+      role: 'admin',
+    },
+    select: { id: true },
   });
-  // The address alone is not access. The admin role is set only after the
-  // owner access code is accepted, or after Better Auth verifies the mailbox.
-  return Boolean(
-    user?.role === 'admin' && user.email.trim().toLowerCase() === configuredOwnerEmail,
-  );
+  if (!owner) return false;
+  const membership = await prisma.teamMembership.findUnique({
+    where: { teamId_userId: { teamId, userId: owner.id } },
+    select: { userId: true },
+  });
+  return Boolean(membership);
 }
 
 async function canUseOwnerTestingAccess(teamId: string, userId: string): Promise<boolean> {
@@ -113,19 +122,19 @@ async function canUseOwnerTestingAccess(teamId: string, userId: string): Promise
 }
 
 export async function getTeamAccessState(teamId: string, userId?: string) {
-  const [ownerTesting, team, ownerPaid] = await Promise.all([
+  const [ownerTesting, team, complimentary] = await Promise.all([
     userId ? canUseOwnerTestingAccess(teamId, userId) : Promise.resolve(false),
     prisma.teamSpace.findUnique({
       where: { id: teamId },
       select: { trialStartedAt: true, trialEndsAt: true },
     }),
-    userId ? configuredOwnerIsAdmin(userId) : Promise.resolve(false),
+    teamHasConfiguredOwnerAdmin(teamId),
   ]);
   const trialStartedAt = team?.trialStartedAt ?? null;
   const trialEndsAt = team?.trialEndsAt ?? null;
-  // Complimentary access follows the admin role for the configured owner.
-  // Every other member still needs a subscription.
-  if (ownerPaid) {
+  // Complimentary access is team-wide once the configured owner is an admin on
+  // that team. Other members keep their roles and still see the permit list.
+  if (complimentary) {
     const entitlement = resolveTeamEntitlement({
       ownerTesting: false,
       subscriptionActive: true,
