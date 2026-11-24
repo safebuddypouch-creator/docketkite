@@ -22,7 +22,14 @@ describe('verification email', () => {
 
   it('sends through Resend when that key is set', async () => {
     await authConfig.emailVerification?.sendVerificationEmail?.({
-      user: { email: 'owner@example.test' },
+      user: {
+        id: 'user-1',
+        createdAt: new Date('2026-11-24T00:00:00.000Z'),
+        updatedAt: new Date('2026-11-24T00:00:00.000Z'),
+        email: 'owner@example.test',
+        emailVerified: false,
+        name: 'Owner',
+      },
       url: 'https://docketkite.apps.grok.bot/verify-email?token=abc',
       token: 'abc',
     });
