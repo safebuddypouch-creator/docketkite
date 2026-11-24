@@ -1,6 +1,7 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   authReturnUrl,
+  invitationAppUrl,
   safeReturnPath,
   teamInvitationPageUrl,
   teamInviteAuthHref,
@@ -10,10 +11,29 @@ import {
 const token = 'A'.repeat(43);
 
 describe('team invitation URLs', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
   it('builds the emailed page URL from the configured application origin', () => {
     expect(teamInvitationPageUrl(token, 'https://app.example.test/account?old=1')).toBe(
       `https://app.example.test/team-invite?token=${token}`,
     );
+  });
+
+  it('uses the published site when no public app URL is configured', () => {
+    vi.stubEnv('NEXT_PUBLIC_APP_URL', '');
+    const request = {
+      headers: {
+        get: (name: string) => (name === 'origin' ? 'https://docketkite.apps.grok.bot' : null),
+      },
+    };
+    expect(invitationAppUrl(request)).toBe('https://docketkite.apps.grok.bot');
+    expect(
+      invitationAppUrl({
+        headers: { get: () => 'https://evil.example' },
+      }),
+    ).toBeUndefined();
   });
 
   it('refuses a missing, malformed, or non-web application origin', () => {
