@@ -1,6 +1,7 @@
 // @polsia:user-owned — paid-team access to the original permit letter.
 import 'server-only';
 import { NextResponse } from 'next/server';
+import { readStoredUploadBytes } from '@/lib/business/stored-upload';
 import {
   MAX_CORRECTION_LETTER_SIZE_BYTES,
   PermitLetterSourceRequest,
@@ -44,13 +45,29 @@ export async function GET(request: Request, { params }: { params: Promise<{ lett
       teamId: input.data.teamId,
       permitId: input.data.permitId,
     },
-    select: { fileUrl: true, fileName: true, mimeType: true, size: true },
+    select: { uploadId: true, fileUrl: true, fileName: true, mimeType: true, size: true },
   });
   if (!letter) return NextResponse.json({ error: 'permit_letter_not_found' }, { status: 404 });
   if (letter.size > MAX_CORRECTION_LETTER_SIZE_BYTES) {
     return NextResponse.json({ error: 'letter_source_too_large' }, { status: 413 });
   }
 
+  const stored = await readStoredUploadBytes(letter.uploadId);
+  if (stored) {
+    const headers = new Headers({
+      'cache-control': 'private, no-store',
+      'content-disposition': `inline; filename*=UTF-8''${encodeURIComponent(stored.fileName)}`,
+      'content-type': stored.mimeType,
+      'content-length': String(stored.size),
+      'referrer-policy': 'no-referrer',
+      'x-content-type-options': 'nosniff',
+      'x-frame-options': 'DENY',
+      'content-security-policy': "frame-ancestors 'none'",
+    });
+    return new Response(new Uint8Array(stored.bytes), { headers });
+  }
+
+  // Legacy letters uploaded through Polsia R2 before local storage.
   let sourceUrl: URL;
   try {
     sourceUrl = new URL(letter.fileUrl);
@@ -58,6 +75,9 @@ export async function GET(request: Request, { params }: { params: Promise<{ lett
     return unavailable();
   }
   if (sourceUrl.protocol !== 'https:' || sourceUrl.username || sourceUrl.password) {
+    return unavailable();
+  }
+  if (sourceUrl.hostname === 'files.docketkitepermits.com') {
     return unavailable();
   }
 

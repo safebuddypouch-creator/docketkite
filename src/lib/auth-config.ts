@@ -26,8 +26,7 @@
 
 import type { BetterAuthOptions } from 'better-auth';
 import { APIError } from 'better-auth/api';
-import { sendEmail } from '@/lib/email/send';
-import { env } from '@/lib/env';
+import { deliverEmail } from '@/lib/email/deliver';
 
 const PUBLISHED_ORIGIN = 'https://docketkite.apps.grok.bot';
 const PUBLISHED_HOST = /(?:^|\.)apps\.grok\.bot$|(?:^|\.)(?:staging\.)?polsia\.(?:app|io)$/;
@@ -102,50 +101,30 @@ export const authConfig: BetterAuthOptions = {
       const href = verificationHref(link);
       const html = `<p><a href="${href}">Verify your email</a></p>`;
       const text = `Verify your email: ${link}`;
-      if (env.RESEND_API_KEY) {
-        const response = await fetch('https://api.resend.com/emails', {
-          method: 'POST',
-          headers: {
-            authorization: `Bearer ${env.RESEND_API_KEY}`,
-            'content-type': 'application/json',
-          },
-          body: JSON.stringify({
-            from: 'DocketKite <noreply@docketkitepermits.com>',
-            to: [user.email],
-            subject: 'Verify your email',
-            html,
-            text,
-          }),
+      try {
+        const result = await deliverEmail({
+          to: user.email,
+          subject: 'Verify your email',
+          html,
+          text,
         });
-        if (!response.ok) {
-          const body = (await response.json().catch(() => null)) as { message?: string } | null;
-          const message = body?.message?.trim();
-          throw APIError.from('FORBIDDEN', {
-            message: message || 'Verification email could not be delivered. Try again in a moment.',
-            code: 'VERIFICATION_EMAIL_NOT_DELIVERED',
-          });
-        }
-        const json = (await response.json()) as { id?: string };
-        if (!json.id) {
+        if (!result.id) {
           throw APIError.from('FORBIDDEN', {
             message: 'Verification email could not be delivered. Try again in a moment.',
             code: 'VERIFICATION_EMAIL_NOT_DELIVERED',
           });
         }
-        return;
+      } catch (error) {
+        if (error && typeof error === 'object' && 'statusCode' in error) throw error;
+        const message =
+          error instanceof Error && error.message
+            ? error.message
+            : 'Verification email could not be delivered. Try again in a moment.';
+        throw APIError.from('FORBIDDEN', {
+          message,
+          code: 'VERIFICATION_EMAIL_NOT_DELIVERED',
+        });
       }
-      // This host does not inject an email service. Fail the resend request
-      // instead of telling the person to check an inbox that will stay empty.
-      if (!env.POLSIA_EMAIL_PROXY_URL) {
-        throw new Error('Email delivery is not configured');
-      }
-      const result = await sendEmail({
-        to: user.email,
-        subject: 'Verify your email',
-        html,
-        text,
-      });
-      if (!result.id) throw new Error('Verification email could not be delivered');
     },
   },
 };

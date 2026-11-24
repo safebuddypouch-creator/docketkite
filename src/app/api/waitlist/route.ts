@@ -16,7 +16,7 @@
 import 'server-only';
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
-import { sendEmail } from '@/lib/email/send';
+import { deliverEmail } from '@/lib/email/deliver';
 import { recordSubmission } from '@/lib/email/submissions';
 import { notificationEmail } from '@/lib/email/templates';
 import { env } from '@/lib/env';
@@ -101,7 +101,7 @@ async function notifyCompany(email: string, submissionId: string) {
   if (!to) return;
 
   try {
-    await sendEmail({
+    await deliverEmail({
       to,
       ...notificationEmail({
         subject: 'New waitlist signup',

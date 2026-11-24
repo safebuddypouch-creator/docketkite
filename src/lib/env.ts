@@ -38,6 +38,8 @@ export const env = createEnv({
     POLSIA_OWNER_ACCESS_CODE: z.string().min(1).optional(),
     // Optional. Resend sends verification mail when this key is set.
     RESEND_API_KEY: z.string().min(1).optional(),
+    // Optional. OpenRouter extracts correction items from uploaded letters.
+    OPENROUTER_API_KEY: z.string().min(1).optional(),
     POLSIA_GOOGLE_SIGNIN_CLIENT_ID: z.string().min(1).optional(),
     GOOGLE_SIGNIN_CLIENT_SECRET: z.string().min(1).optional(),
     // @polsia:contrib better-auth end
@@ -90,6 +92,7 @@ export const env = createEnv({
     POLSIA_OWNER_EMAIL: process.env.POLSIA_OWNER_EMAIL,
     POLSIA_OWNER_ACCESS_CODE: process.env.POLSIA_OWNER_ACCESS_CODE,
     RESEND_API_KEY: process.env.RESEND_API_KEY,
+    OPENROUTER_API_KEY: process.env.OPENROUTER_API_KEY,
     POLSIA_GOOGLE_SIGNIN_CLIENT_ID: process.env.POLSIA_GOOGLE_SIGNIN_CLIENT_ID,
     GOOGLE_SIGNIN_CLIENT_SECRET: process.env.GOOGLE_SIGNIN_CLIENT_SECRET,
     // @polsia:contrib better-auth start

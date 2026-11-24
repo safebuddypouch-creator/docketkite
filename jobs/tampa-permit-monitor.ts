@@ -13,10 +13,10 @@ import { recordPermitPortalStatusTransition } from '@/lib/business/permit-status
 import { resolveTeamStatusAlertRecipients } from '@/lib/business/team-status-alert-recipients';
 import { getOfficialPermitPortalUrl } from '@/lib/contracts/permit';
 import { prisma } from '@/lib/db';
-import { sendEmail } from '@/lib/email/send';
+import { deliverEmail } from '@/lib/email/deliver';
 import { permitPortalStatusDetectedEmail } from '@/lib/email/templates';
 import { getTeamAccessState } from '@/lib/team-access';
-import { fetchPage, runBatch } from '@/modules/web-search/client';
+import { fetchPermitPortalPage } from '@/lib/business/permit-portal-page-fetch';
 
 const MAX_CHECKS_PER_RUN = 20;
 
@@ -47,34 +47,32 @@ async function main(): Promise<void> {
     .slice(0, MAX_CHECKS_PER_RUN);
 
   const accessByTeam = new Map<string, Promise<boolean>>();
-  await runBatch(
-    candidates,
-    async (permit) => {
-      const attemptTime = new Date();
-      await prisma.permitPortalCheckCounter.upsert({
-        where: { permitId: permit.id },
-        create: {
-          permitId: permit.id,
-          sequence: 0,
-          checkedAt: attemptTime,
-          attemptedAt: attemptTime,
-        },
-        update: { attemptedAt: attemptTime },
-      });
-      let teamAccess = accessByTeam.get(permit.teamId);
-      if (!teamAccess) {
-        teamAccess = (async () => {
-          const team = await prisma.teamSpace.findUnique({
-            where: { id: permit.teamId },
-            select: { createdByUserId: true },
-          });
-          if (!team) return false;
-          const state = await getTeamAccessState(permit.teamId, team.createdByUserId);
-          return state.accessActive;
-        })();
-        accessByTeam.set(permit.teamId, teamAccess);
-      }
-      if (!(await teamAccess)) return;
+  for (const permit of candidates) {
+    const attemptTime = new Date();
+    await prisma.permitPortalCheckCounter.upsert({
+      where: { permitId: permit.id },
+      create: {
+        permitId: permit.id,
+        sequence: 0,
+        checkedAt: attemptTime,
+        attemptedAt: attemptTime,
+      },
+      update: { attemptedAt: attemptTime },
+    });
+    let teamAccess = accessByTeam.get(permit.teamId);
+    if (!teamAccess) {
+      teamAccess = (async () => {
+        const team = await prisma.teamSpace.findUnique({
+          where: { id: permit.teamId },
+          select: { createdByUserId: true },
+        });
+        if (!team) return false;
+        const state = await getTeamAccessState(permit.teamId, team.createdByUserId);
+        return state.accessActive;
+      })();
+      accessByTeam.set(permit.teamId, teamAccess);
+    }
+    if (!(await teamAccess)) continue;
 
       const now = new Date();
       const reservation = await prisma.permitPortalCheckCounter.upsert({
@@ -83,7 +81,11 @@ async function main(): Promise<void> {
         update: { sequence: { increment: 1 }, checkedAt: now, attemptedAt: now },
         select: { sequence: true, checkedAt: true },
       });
-      const read = await readPermitPortalPage(permit.sourceUrl, permit.permitNumber, fetchPage);
+      const read = await readPermitPortalPage(
+        permit.sourceUrl,
+        permit.permitNumber,
+        fetchPermitPortalPage,
+      );
       let result: 'checked' | 'unverified' | 'unavailable' = 'unavailable';
       let status: string | null = null;
       let message: string | null = 'The public City record could not be checked.';
@@ -334,15 +336,13 @@ async function main(): Promise<void> {
       if (saved) {
         await Promise.allSettled(
           saved.recipients.map((to) =>
-            sendEmail({ to, ...permitPortalStatusDetectedEmail(saved) }),
+            deliverEmail({ to, ...permitPortalStatusDetectedEmail(saved) }),
           ),
         );
       }
 
-      if (read.kind === 'failed') throw read.error;
-    },
-    { budgetMs: 240_000, itemBudgetMs: 60_000 },
-  );
+    if (read.kind === 'failed') throw read.error;
+  }
 }
 
 main().catch((error: unknown) => {

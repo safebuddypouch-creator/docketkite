@@ -1,57 +1,24 @@
-// @polsia:user-owned — bind completed file-module uploads to one permit intent.
+// @polsia:user-owned — store permit letter bytes in Postgres (no Polsia R2).
 import 'server-only';
-import { createHash, timingSafeEqual } from 'node:crypto';
 import { NextResponse } from 'next/server';
-import { z } from 'zod';
 import {
-  UploadConfirmResponse,
-  type UploadRequest,
-  UploadTicket,
-} from '@/lib/contracts/file-upload';
-import {
+  MAX_CORRECTION_LETTER_SIZE_BYTES,
+  CorrectionLetterMimeType,
   PermitLetterUploadReceipt,
-  RegisteredCorrectionLetterFile,
 } from '@/lib/contracts/permit-letter';
 import { prisma } from '@/lib/db';
+import { storeUploadBytes } from '@/lib/business/stored-upload';
 import { authorizeUpload, readPermitUploadScope } from '@/lib/file-upload/policy.server';
 import { requireAuth, type SessionUser } from '@/lib/require-auth';
 import { sameOrigin } from '@/lib/same-origin';
-import {
-  confirmUpload,
-  isMultipartUpload,
-  mintUpload,
-  readUploadBody,
-  relayMultipart,
-  UploadAuthorization,
-} from '@/modules/file-upload/proxy';
+import { UploadAuthorization } from '@/modules/file-upload/proxy';
 
 export const dynamic = 'force-dynamic';
-
-const UploadAction = z.discriminatedUnion('action', [
-  z.object({ action: z.literal('mint') }),
-  z.object({ action: z.literal('confirm'), upload_id: z.string().min(1).max(4096) }),
-]);
 
 const NO_STORE_HEADERS = { 'cache-control': 'no-store', 'referrer-policy': 'no-referrer' };
 const INTENT_LIFETIME_MS = 30 * 60 * 1000;
 
 type UploadIntent = NonNullable<Awaited<ReturnType<typeof prisma.permitUploadIntent.findUnique>>>;
-
-function hashUploadId(uploadId: string): string {
-  return createHash('sha256').update(uploadId).digest('hex');
-}
-
-function matchesHash(storedHash: string | null, uploadId: string): boolean {
-  if (!storedHash || !/^[a-f0-9]{64}$/.test(storedHash)) return false;
-  return timingSafeEqual(
-    Buffer.from(storedHash, 'hex'),
-    Buffer.from(hashUploadId(uploadId), 'hex'),
-  );
-}
-
-async function responseBody(response: Response): Promise<unknown> {
-  return response.json().catch(() => null);
-}
 
 async function getAuthorizedIntent(
   request: Request,
@@ -68,12 +35,17 @@ async function getAuthorizedIntent(
     return {
       response: NextResponse.json(
         { error: 'permit_upload_authorization_required' },
-        { status: 403 },
+        { status: 403, headers: NO_STORE_HEADERS },
       ),
     };
   }
   if ((await authorizeUpload(request)) !== UploadAuthorization.Allow) {
-    return { response: NextResponse.json({ error: 'upload_not_authorized' }, { status: 401 }) };
+    return {
+      response: NextResponse.json(
+        { error: 'upload_not_authorized' },
+        { status: 401, headers: NO_STORE_HEADERS },
+      ),
+    };
   }
 
   const intent = await prisma.permitUploadIntent.findUnique({ where: { id: scope.intentId } });
@@ -87,45 +59,13 @@ async function getAuthorizedIntent(
     intent.expiresAt.getTime() > Date.now() + INTENT_LIFETIME_MS
   ) {
     return {
-      response: NextResponse.json({ error: 'permit_upload_intent_required' }, { status: 403 }),
+      response: NextResponse.json(
+        { error: 'permit_upload_intent_required' },
+        { status: 403, headers: NO_STORE_HEADERS },
+      ),
     };
   }
   return { user, intent };
-}
-
-function parseConfirmedFile(payload: unknown, intent: UploadIntent) {
-  const confirmed = UploadConfirmResponse.safeParse(payload);
-  if (!confirmed.success) return null;
-  const file = RegisteredCorrectionLetterFile.safeParse(confirmed.data.file);
-  if (
-    !file.success ||
-    file.data.filename !== intent.fileName ||
-    file.data.mime_type !== intent.mimeType ||
-    file.data.size !== intent.size
-  ) {
-    return null;
-  }
-  return file.data;
-}
-
-async function saveConfirmedFile(
-  intent: UploadIntent,
-  fileId: number,
-  uploadIdHash: string | null,
-) {
-  return prisma.permitUploadIntent.updateMany({
-    where: {
-      id: intent.id,
-      userId: intent.userId,
-      teamId: intent.teamId,
-      permitId: intent.permitId,
-      consumedAt: null,
-      expiresAt: { gt: new Date() },
-      uploadIdHash,
-      confirmedFileId: null,
-    },
-    data: { confirmedFileId: fileId },
-  });
 }
 
 export async function POST(request: Request): Promise<Response> {
@@ -138,115 +78,94 @@ export async function POST(request: Request): Promise<Response> {
 
   const authorized = await getAuthorizedIntent(request);
   if ('response' in authorized) return authorized.response;
-  const { intent } = authorized;
+  const { user, intent } = authorized;
+
+  const contentType = request.headers.get('content-type') ?? '';
+  if (!contentType.toLowerCase().includes('multipart/form-data')) {
+    // Old mint/confirm clients: force the multipart path.
+    return NextResponse.json(
+      {
+        error: {
+          code: 'direct_upload_disabled',
+          message: 'Upload the letter as a multipart form file.',
+        },
+      },
+      { status: 409, headers: NO_STORE_HEADERS },
+    );
+  }
+
+  if (intent.uploadIdHash !== null || intent.confirmedFileId !== null) {
+    return NextResponse.json(
+      { error: 'upload_intent_already_used' },
+      { status: 409, headers: NO_STORE_HEADERS },
+    );
+  }
 
   try {
-    if (isMultipartUpload(request)) {
-      if (intent.uploadIdHash !== null || intent.confirmedFileId !== null) {
-        return NextResponse.json(
-          { error: 'upload_intent_already_used' },
-          { status: 409, headers: NO_STORE_HEADERS },
-        );
-      }
-      const upstream = await relayMultipart(request);
-      const payload = await responseBody(upstream);
-      if (!upstream.ok) {
-        return NextResponse.json(payload, { status: upstream.status, headers: NO_STORE_HEADERS });
-      }
-      const file = parseConfirmedFile(payload, intent);
-      if (!file) {
-        return NextResponse.json(
-          { error: 'invalid_correction_letter' },
-          { status: 422, headers: NO_STORE_HEADERS },
-        );
-      }
-      const saved = await saveConfirmedFile(intent, file.id, null);
-      if (saved.count !== 1) {
-        return NextResponse.json(
-          { error: 'permit_upload_intent_consumed' },
-          { status: 409, headers: NO_STORE_HEADERS },
-        );
-      }
-      return NextResponse.json(PermitLetterUploadReceipt.parse({ fileId: file.id }), {
-        headers: NO_STORE_HEADERS,
-      });
-    }
-
-    const parsed = await readUploadBody(request, UploadAction);
-    if (parsed instanceof Response) return parsed;
-
-    if (parsed.action === 'mint') {
-      const input: UploadRequest = {
-        filename: intent.fileName,
-        mime_type: intent.mimeType,
-        size: intent.size,
-      };
-      const upstream = await mintUpload(input);
-      const payload = await responseBody(upstream);
-      if (!upstream.ok) {
-        return NextResponse.json(payload, { status: upstream.status, headers: NO_STORE_HEADERS });
-      }
-      const ticket = UploadTicket.safeParse(payload);
-      if (!ticket.success) {
-        return NextResponse.json(
-          { error: 'invalid_upload_ticket' },
-          { status: 502, headers: NO_STORE_HEADERS },
-        );
-      }
-      const uploadIdHash = hashUploadId(ticket.data.upload_id);
-      const saved = await prisma.permitUploadIntent.updateMany({
-        where: {
-          id: intent.id,
-          userId: intent.userId,
-          teamId: intent.teamId,
-          permitId: intent.permitId,
-          consumedAt: null,
-          expiresAt: { gt: new Date() },
-        },
-        data: { uploadIdHash, confirmedFileId: null },
-      });
-      if (saved.count !== 1) {
-        return NextResponse.json(
-          { error: 'permit_upload_intent_consumed' },
-          { status: 409, headers: NO_STORE_HEADERS },
-        );
-      }
-      return NextResponse.json(ticket.data, { headers: NO_STORE_HEADERS });
-    }
-
-    if (intent.uploadIdHash === null || !matchesHash(intent.uploadIdHash, parsed.upload_id)) {
+    const form = await request.formData();
+    const file = form.get('file');
+    if (!(file instanceof File)) {
       return NextResponse.json(
-        { error: 'upload_ticket_not_authorized' },
-        { status: 403, headers: NO_STORE_HEADERS },
+        { error: { code: 'missing_file', message: 'Choose a letter file to upload.' } },
+        { status: 400, headers: NO_STORE_HEADERS },
       );
     }
-    if (intent.confirmedFileId !== null) {
+    if (file.name !== intent.fileName || file.type !== intent.mimeType || file.size !== intent.size) {
       return NextResponse.json(
-        PermitLetterUploadReceipt.parse({ fileId: intent.confirmedFileId }),
-        { headers: NO_STORE_HEADERS },
-      );
-    }
-
-    const upstream = await confirmUpload({ upload_id: parsed.upload_id });
-    const payload = await responseBody(upstream);
-    if (!upstream.ok) {
-      return NextResponse.json(payload, { status: upstream.status, headers: NO_STORE_HEADERS });
-    }
-    const file = parseConfirmedFile(payload, intent);
-    if (!file) {
-      return NextResponse.json(
-        { error: 'invalid_correction_letter' },
+        { error: { code: 'upload_changed', message: 'The letter file no longer matches the approved upload.' } },
         { status: 422, headers: NO_STORE_HEADERS },
       );
     }
-    const saved = await saveConfirmedFile(intent, file.id, intent.uploadIdHash);
+    const mime = CorrectionLetterMimeType.safeParse(file.type);
+    if (!mime.success) {
+      return NextResponse.json(
+        { error: { code: 'invalid_file_type', message: 'Use a PDF, JPG, PNG, WebP, DOCX, or plain-text letter.' } },
+        { status: 415, headers: NO_STORE_HEADERS },
+      );
+    }
+    if (file.size > MAX_CORRECTION_LETTER_SIZE_BYTES) {
+      return NextResponse.json(
+        {
+          error: {
+            code: 'file_too_large',
+            message: 'This letter is too large to upload.',
+            max_size: MAX_CORRECTION_LETTER_SIZE_BYTES,
+          },
+        },
+        { status: 413, headers: NO_STORE_HEADERS },
+      );
+    }
+
+    const bytes = Buffer.from(await file.arrayBuffer());
+    const stored = await storeUploadBytes({
+      userId: user.id,
+      teamId: intent.teamId,
+      filename: intent.fileName,
+      mimeType: intent.mimeType,
+      bytes,
+    });
+
+    const saved = await prisma.permitUploadIntent.updateMany({
+      where: {
+        id: intent.id,
+        userId: intent.userId,
+        teamId: intent.teamId,
+        permitId: intent.permitId,
+        consumedAt: null,
+        expiresAt: { gt: new Date() },
+        uploadIdHash: null,
+        confirmedFileId: null,
+      },
+      data: { confirmedFileId: stored.id },
+    });
     if (saved.count !== 1) {
       return NextResponse.json(
         { error: 'permit_upload_intent_consumed' },
         { status: 409, headers: NO_STORE_HEADERS },
       );
     }
-    return NextResponse.json(PermitLetterUploadReceipt.parse({ fileId: file.id }), {
+
+    return NextResponse.json(PermitLetterUploadReceipt.parse({ fileId: stored.id }), {
       headers: NO_STORE_HEADERS,
     });
   } catch {

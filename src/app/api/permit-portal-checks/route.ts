@@ -23,7 +23,7 @@ import {
   PermitPortalMonitoringState,
 } from '@/lib/contracts/permit-portal-check';
 import { prisma } from '@/lib/db';
-import { sendEmail } from '@/lib/email/send';
+import { deliverEmail } from '@/lib/email/deliver';
 import {
   permitMonitoringInterruptedEmail,
   permitPortalStatusDetectedEmail,
@@ -33,15 +33,10 @@ import { sameOrigin } from '@/lib/same-origin';
 import { siteUrl } from '@/lib/site';
 import { requireTeamAccess } from '@/lib/team-access';
 import {
-  fetchPage,
-  InvalidUrlError,
-  PageUnavailableError,
-  QuotaExceededError,
-  WebSearchConfigurationError,
-  WebSearchError,
-  WebSearchNotEnabledError,
-  WebSearchUnavailableError,
-} from '@/modules/web-search/client';
+  fetchPermitPortalPage,
+  PermitPortalInvalidUrlError,
+  PermitPortalPageUnavailableError,
+} from '@/lib/business/permit-portal-page-fetch';
 
 export const dynamic = 'force-dynamic';
 
@@ -85,32 +80,17 @@ function serializeMonitoring(state: ReturnType<typeof portalMonitoringFromHistor
 }
 
 function retrievalFailure(error: unknown): { result: 'unavailable'; message: string } {
-  if (error instanceof PageUnavailableError || error instanceof InvalidUrlError) {
+  if (error instanceof PermitPortalInvalidUrlError) {
+    return {
+      result: 'unavailable',
+      message: 'Enter a direct City of Tampa Building record URL from the official Accela portal.',
+    };
+  }
+  if (error instanceof PermitPortalPageUnavailableError) {
     return {
       result: 'unavailable',
       message: 'The public City record page could not be read.',
     };
-  }
-  if (error instanceof WebSearchNotEnabledError) {
-    return { result: 'unavailable', message: 'Public-page retrieval is not enabled for this app.' };
-  }
-  if (error instanceof QuotaExceededError) {
-    return { result: 'unavailable', message: 'The public-page retrieval limit has been reached.' };
-  }
-  if (error instanceof WebSearchConfigurationError) {
-    return {
-      result: 'unavailable',
-      message: 'Public-page retrieval is not configured for this app.',
-    };
-  }
-  if (error instanceof WebSearchUnavailableError) {
-    return {
-      result: 'unavailable',
-      message: 'The public-page retrieval service is temporarily unavailable.',
-    };
-  }
-  if (error instanceof WebSearchError) {
-    return { result: 'unavailable', message: 'The public City record could not be retrieved.' };
   }
   return { result: 'unavailable', message: 'The public City record could not be checked.' };
 }
@@ -272,7 +252,7 @@ export async function POST(request: Request) {
   const portalPageRead = await readPermitPortalPage(
     permit.portalUrl,
     permit.permitNumber,
-    fetchPage,
+    fetchPermitPortalPage,
   );
   if (portalPageRead.kind === 'invalid_url') {
     return NextResponse.json(
@@ -578,7 +558,7 @@ export async function POST(request: Request) {
       try {
         await Promise.allSettled(
           statusNotification.recipients.map((to) =>
-            sendEmail({ to, ...permitPortalStatusDetectedEmail(statusNotification) }),
+            deliverEmail({ to, ...permitPortalStatusDetectedEmail(statusNotification) }),
           ),
         );
       } catch {
@@ -601,7 +581,7 @@ export async function POST(request: Request) {
           : [];
         await Promise.allSettled(
           recipients.map((recipient) =>
-            sendEmail({
+            deliverEmail({
               to: recipient.email,
               ...permitMonitoringInterruptedEmail(interruptionNotification),
             }),

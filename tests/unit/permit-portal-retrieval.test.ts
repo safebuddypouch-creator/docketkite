@@ -2,7 +2,15 @@
 // @vitest-environment node
 import { describe, expect, it, vi } from 'vitest';
 import { readPermitPortalPage } from '@/lib/business/permit-portal-retrieval';
-import { SAMPLE_PAGE } from '@/modules/web-search/testing';
+import type { PermitPortalFetchedPage } from '@/lib/business/permit-portal-page-fetch';
+
+const SAMPLE_PAGE: PermitPortalFetchedPage = {
+  markdown: 'Record Status: In Process\nPermit Number: BLD-27-0529173',
+  title: 'City of Tampa Accela record',
+  truncated: false,
+  cached: false,
+  fetchedAt: '2026-03-24T12:00:00.000Z',
+};
 
 describe('permit portal page retrieval guard', () => {
   it.each([
@@ -29,7 +37,7 @@ describe('permit portal page retrieval guard', () => {
     expect(fetcher).not.toHaveBeenCalled();
   });
 
-  it('retrieves a valid official portal URL through the supplied web-search client', async () => {
+  it('retrieves a valid official portal URL through the supplied page fetcher', async () => {
     const fetcher = vi.fn(async () => SAMPLE_PAGE);
     const sourceUrl =
       'https://aca-prod.accela.com/TAMPA/Cap/CapDetail.aspx?Module=Building&TabName=Building&capID1=26CAP&capID2=00000&capID3=02UTH&agencyCode=TAMPA';

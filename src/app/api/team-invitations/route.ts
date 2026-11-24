@@ -8,7 +8,7 @@ import {
   TeamInvitationCreateResponse,
 } from '@/lib/contracts/team-invitation';
 import { prisma } from '@/lib/db';
-import { sendEmail } from '@/lib/email/send';
+import { deliverEmail } from '@/lib/email/deliver';
 import { teamManagerInvitationEmail, teamTestingOwnerInvitationEmail } from '@/lib/email/templates';
 import { env } from '@/lib/env';
 import { requireAuth, type SessionUser } from '@/lib/require-auth';
@@ -20,32 +20,6 @@ const INVITATION_LIFETIME_MS = 7 * 24 * 60 * 60 * 1000;
 
 function hashToken(token: string): string {
   return createHash('sha256').update(token).digest('hex');
-}
-
-async function sendInvitationWithResend(input: {
-  to: string;
-  subject: string;
-  html: string;
-  text?: string;
-}): Promise<{ id: string }> {
-  const response = await fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: {
-      authorization: `Bearer ${env.RESEND_API_KEY}`,
-      'content-type': 'application/json',
-    },
-    body: JSON.stringify({
-      from: 'DocketKite <noreply@docketkitepermits.com>',
-      to: [input.to],
-      subject: input.subject,
-      html: input.html,
-      text: input.text,
-    }),
-  });
-  if (!response.ok) throw new Error('Invitation email was not accepted');
-  const json = (await response.json()) as { id?: string };
-  if (!json.id) throw new Error('Invitation email was not accepted');
-  return { id: json.id };
 }
 
 export async function POST(request: Request) {
@@ -196,9 +170,7 @@ export async function POST(request: Request) {
       });
 
   try {
-    const delivery = env.RESEND_API_KEY
-      ? await sendInvitationWithResend({ to: email, ...message })
-      : await sendEmail({ to: email, ...message });
+    const delivery = await deliverEmail({ to: email, ...message });
     if (!delivery.id) throw new Error('The invitation recipient is suppressed.');
   } catch {
     await prisma.teamInvitation

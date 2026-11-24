@@ -3,7 +3,7 @@ import 'server-only';
 import { didPermitStatusChange } from '@/lib/business/permit-status';
 import type { PermitFields } from '@/lib/contracts/permit';
 import { prisma } from '@/lib/db';
-import { sendEmail } from '@/lib/email/send';
+import { deliverEmail } from '@/lib/email/deliver';
 import { permitStatusChangedEmail } from '@/lib/email/templates';
 import { siteUrl } from '@/lib/site';
 
@@ -124,5 +124,5 @@ async function notifyProjectManagers(input: {
     ).toString(),
   });
 
-  await Promise.allSettled(managers.map((manager) => sendEmail({ to: manager.email, ...message })));
+  await Promise.allSettled(managers.map((manager) => deliverEmail({ to: manager.email, ...message })));
 }
