@@ -23,7 +23,7 @@ import {
   PermitPortalMonitoringState,
 } from '@/lib/contracts/permit-portal-check';
 import { prisma } from '@/lib/db';
-import { sendEmail } from '@/lib/email/send';
+import { deliverEmail } from '@/lib/email/deliver';
 import {
   permitMonitoringInterruptedEmail,
   permitPortalStatusDetectedEmail,
@@ -558,7 +558,7 @@ export async function POST(request: Request) {
       try {
         await Promise.allSettled(
           statusNotification.recipients.map((to) =>
-            sendEmail({ to, ...permitPortalStatusDetectedEmail(statusNotification) }),
+            deliverEmail({ to, ...permitPortalStatusDetectedEmail(statusNotification) }),
           ),
         );
       } catch {
@@ -581,7 +581,7 @@ export async function POST(request: Request) {
           : [];
         await Promise.allSettled(
           recipients.map((recipient) =>
-            sendEmail({
+            deliverEmail({
               to: recipient.email,
               ...permitMonitoringInterruptedEmail(interruptionNotification),
             }),

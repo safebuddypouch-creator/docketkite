@@ -9,7 +9,7 @@ import {
   PermitCorrectionChecklistResponse,
 } from '@/lib/contracts/permit-letter';
 import { prisma } from '@/lib/db';
-import { sendEmail } from '@/lib/email/send';
+import { deliverEmail } from '@/lib/email/deliver';
 import { permitCorrectionChecklistCreatedEmail } from '@/lib/email/templates';
 import { requireAuth, type SessionUser } from '@/lib/require-auth';
 import { sameOrigin } from '@/lib/same-origin';
@@ -103,7 +103,7 @@ async function notifyAssignedProjectManager(checklist: {
     const checklistPath = `/dashboard/permits/${encodeURIComponent(checklist.permitId)}/letters/${encodeURIComponent(checklist.permitLetterId)}/checklist`;
     const checklistUrl = new URL(checklistPath, siteUrl).toString();
 
-    await sendEmail({
+    await deliverEmail({
       to: manager.email,
       ...permitCorrectionChecklistCreatedEmail({
         permitReference,

@@ -13,7 +13,7 @@ import { recordPermitPortalStatusTransition } from '@/lib/business/permit-status
 import { resolveTeamStatusAlertRecipients } from '@/lib/business/team-status-alert-recipients';
 import { getOfficialPermitPortalUrl } from '@/lib/contracts/permit';
 import { prisma } from '@/lib/db';
-import { sendEmail } from '@/lib/email/send';
+import { deliverEmail } from '@/lib/email/deliver';
 import { permitPortalStatusDetectedEmail } from '@/lib/email/templates';
 import { getTeamAccessState } from '@/lib/team-access';
 import { fetchPermitPortalPage } from '@/lib/business/permit-portal-page-fetch';
@@ -336,7 +336,7 @@ async function main(): Promise<void> {
       if (saved) {
         await Promise.allSettled(
           saved.recipients.map((to) =>
-            sendEmail({ to, ...permitPortalStatusDetectedEmail(saved) }),
+            deliverEmail({ to, ...permitPortalStatusDetectedEmail(saved) }),
           ),
         );
       }

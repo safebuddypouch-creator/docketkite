@@ -12,7 +12,7 @@ import 'server-only';
 import { NextResponse } from 'next/server';
 import { contactSchema } from '@/lib/contact/schema';
 import { prisma } from '@/lib/db';
-import { sendEmail } from '@/lib/email/send';
+import { deliverEmail } from '@/lib/email/deliver';
 import { recordSubmission } from '@/lib/email/submissions';
 import { notificationEmail } from '@/lib/email/templates';
 import { env } from '@/lib/env';
@@ -114,7 +114,7 @@ async function notifyCompany(
   if (!to) return;
 
   try {
-    await sendEmail({
+    await deliverEmail({
       to,
       ...notificationEmail({
         subject: `New contact message from ${input.name}`,
