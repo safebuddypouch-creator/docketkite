@@ -25,9 +25,37 @@
 //   } } } },
 
 import type { BetterAuthOptions } from 'better-auth';
+import { sendEmail } from '@/lib/email/send';
+import { env } from '@/lib/env';
+
+function verificationHref(url: string): string {
+  return url
+    .replaceAll('&', '&amp;')
+    .replaceAll('"', '&quot;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll("'", '&#39;');
+}
 
 export const authConfig: BetterAuthOptions = {
   emailAndPassword: {
     enabled: true,
+  },
+  emailVerification: {
+    sendVerificationEmail: async ({ user, url }) => {
+      // This host does not inject an email service. Fail the resend request
+      // instead of telling the person to check an inbox that will stay empty.
+      if (!env.POLSIA_EMAIL_PROXY_URL) {
+        throw new Error('Email delivery is not configured');
+      }
+      const href = verificationHref(url);
+      const result = await sendEmail({
+        to: user.email,
+        subject: 'Verify your email',
+        html: `<p><a href="${href}">Verify your email</a></p>`,
+        text: `Verify your email: ${url}`,
+      });
+      if (!result.id) throw new Error('Verification email could not be delivered');
+    },
   },
 };

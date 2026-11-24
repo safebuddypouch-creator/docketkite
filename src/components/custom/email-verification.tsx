@@ -41,7 +41,8 @@ export function EmailVerification({
       {sent ? <output>Check your inbox for your verification link.</output> : null}
       {failed ? (
         <p role="alert" className="text-sm text-destructive">
-          We could not send the verification email. Please try again shortly.
+          No verification email was sent. This site is not connected to an email service, so there
+          is nothing to click in your inbox. Use the owner access code on this page instead.
         </p>
       ) : null}
       <Button type="button" onClick={resend} disabled={pending}>
