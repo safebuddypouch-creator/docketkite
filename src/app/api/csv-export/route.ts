@@ -3,11 +3,16 @@
 import 'server-only';
 import { PermitExportFilters } from '@/lib/contracts/permit-export';
 import { authorizeCsvExport, csvExportSources } from '@/lib/csv-export/sources.server';
+import { stripPolsiaCsvMetadata } from '@/lib/csv-export/strip-polsia-metadata';
 import { requireAuth } from '@/lib/require-auth';
 import { sameOrigin } from '@/lib/same-origin';
 import { siteUrl } from '@/lib/site';
 import { requireTeamAccess } from '@/lib/team-access';
-import { CSV_EXPORT_ERRORS, CSV_EXPORT_LIMITS } from '@/modules/csv-export/contracts';
+import {
+  CSV_EXPORT_ERRORS,
+  CSV_EXPORT_LIMITS,
+  exportResponseSchema,
+} from '@/modules/csv-export/contracts';
 import { createCsvExportHandlers } from '@/modules/csv-export/server';
 
 export const dynamic = 'force-dynamic';
@@ -120,10 +125,32 @@ export async function POST(request: Request) {
     return moduleError('FORBIDDEN', access.response.status);
   }
 
-  return handlers.POST(
+  const exported = await handlers.POST(
     requestForHandler(request, {
       'x-polsia-csv-actor-id': user.id,
       'x-polsia-csv-team-id': filterResult.data.teamId,
     }),
+  );
+  if (!exported.ok) return exported;
+
+  const payload = exportResponseSchema.safeParse(await exported.clone().json().catch(() => null));
+  if (!payload.success) return exported;
+
+  return Response.json(
+    {
+      ok: true,
+      data: {
+        ...payload.data.data,
+        csv: stripPolsiaCsvMetadata(payload.data.data.csv),
+        filename: 'permits.csv',
+      },
+    },
+    {
+      status: exported.status,
+      headers: {
+        'cache-control': 'no-store',
+        'x-content-type-options': 'nosniff',
+      },
+    },
   );
 }
