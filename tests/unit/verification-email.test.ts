@@ -38,6 +38,9 @@ describe('verification email', () => {
       'https://api.resend.com/emails',
       expect.objectContaining({ method: 'POST' }),
     );
+    const init = vi.mocked(fetch).mock.calls[0]?.[1];
+    const body = JSON.parse(String(init && 'body' in init ? init.body : '{}')) as { from?: string };
+    expect(body.from).toBe('DocketKite <noreply@docketkitepermits.com>');
   });
 
   it('reports when Resend will only email the account that owns it', async () => {

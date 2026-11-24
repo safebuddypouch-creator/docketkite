@@ -55,7 +55,7 @@ export const authConfig: BetterAuthOptions = {
             'content-type': 'application/json',
           },
           body: JSON.stringify({
-            from: 'DocketKite <onboarding@resend.dev>',
+            from: 'DocketKite <noreply@docketkitepermits.com>',
             to: [user.email],
             subject: 'Verify your email',
             html,
