@@ -1,6 +1,13 @@
 // @polsia:user-owned — remove framework Polsia metadata columns from permit CSV downloads.
 
-const POLSIA_METADATA_COLUMN_COUNT = 6;
+const POLSIA_METADATA_HEADERS = [
+  '__polsia_format',
+  '__polsia_source',
+  '__polsia_schema',
+  '__polsia_scope',
+  '__polsia_key',
+  '__polsia_version',
+] as const;
 
 /**
  * Drops the leading `__polsia_*` metadata columns (and their `polsia-csv-v2`
@@ -12,17 +19,23 @@ export function stripPolsiaCsvMetadata(csv: string): string {
   if (!body) return csv;
 
   const lines = body.split('\r\n');
-  // Trailing empty segment from a final CRLF should be preserved as an empty line.
+  const headerLine = lines[0] ?? '';
+  const headers = parseCsvLine(headerLine);
+  const hasPolsiaMetadata =
+    headers.length >= POLSIA_METADATA_HEADERS.length &&
+    POLSIA_METADATA_HEADERS.every((name, index) => headers[index] === name);
+  if (!hasPolsiaMetadata) return csv;
+
   const rewritten = lines.map((line, index) => {
     if (line === '' && index === lines.length - 1) return '';
-    return dropLeadingColumns(line, POLSIA_METADATA_COLUMN_COUNT);
+    return parseCsvLine(line).slice(POLSIA_METADATA_HEADERS.length).map(quoteCsvCell).join(',');
   });
 
   return `${hasBom ? '\uFEFF' : ''}${rewritten.join('\r\n')}`;
 }
 
-function dropLeadingColumns(line: string, count: number): string {
-  if (!line || count <= 0) return line;
+function parseCsvLine(line: string): string[] {
+  if (!line) return [];
   const cells: string[] = [];
   let current = '';
   let inQuotes = false;
@@ -35,7 +48,6 @@ function dropLeadingColumns(line: string, count: number): string {
         continue;
       }
       inQuotes = !inQuotes;
-      current += char;
       continue;
     }
     if (char === ',' && !inQuotes) {
@@ -46,5 +58,9 @@ function dropLeadingColumns(line: string, count: number): string {
     current += char;
   }
   cells.push(current);
-  return cells.slice(count).join(',');
+  return cells;
+}
+
+function quoteCsvCell(value: string): string {
+  return `"${value.replaceAll('"', '""')}"`;
 }
