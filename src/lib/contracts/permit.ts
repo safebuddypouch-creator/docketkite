@@ -4,6 +4,16 @@ import { z } from 'zod';
 export const CITY_OF_TAMPA_PERMIT_PORTAL_URL =
   'https://aca-prod.accela.com/TAMPA/Cap/CapHome.aspx?TabName=Building&module=Building';
 
+/** Accela query names vary in casing across search results and shared links. */
+function uniqueQueryValue(url: URL, name: string): string | null {
+  const matches = [...url.searchParams.entries()].filter(
+    ([key]) => key.toLowerCase() === name.toLowerCase(),
+  );
+  if (matches.length !== 1) return null;
+  const value = matches[0]?.[1]?.trim();
+  return value ? value : null;
+}
+
 function isOfficialTampaPermitRecordUrl(value: string): boolean {
   const hasWhitespaceOrControlCharacter = Array.from(value).some((character) => {
     const codePoint = character.charCodeAt(0);
@@ -14,16 +24,14 @@ function isOfficialTampaPermitRecordUrl(value: string): boolean {
   try {
     const url = new URL(value);
     const authority = value.match(/^https:\/\/([^/?#]*)/i)?.[1];
-    if (
-      !authority ||
-      authority.includes('@') ||
-      authority.includes(':') ||
-      authority.includes('\\') ||
-      authority.toLowerCase() !== url.hostname.toLowerCase()
-    ) {
-      return false;
-    }
     const hostname = url.hostname.toLowerCase();
+    const authorityOk =
+      Boolean(authority) &&
+      !authority.includes('@') &&
+      !authority.includes('\\') &&
+      (authority.toLowerCase() === hostname || authority.toLowerCase() === `${hostname}:443`);
+    if (!authorityOk) return false;
+    if (url.port && url.port !== '443') return false;
     const labels = hostname.split('.');
     if (
       hostname.length > 253 ||
@@ -36,22 +44,19 @@ function isOfficialTampaPermitRecordUrl(value: string): boolean {
     ) {
       return false;
     }
-    const requiredIds = ['capID1', 'capID2', 'capID3'];
-    const hasRecordIds = requiredIds.every((name) => {
-      const values = url.searchParams.getAll(name);
-      return values.length === 1 && values[0] !== undefined && values[0].trim().length > 0;
-    });
+    const hasRecordIds = ['capID1', 'capID2', 'capID3'].every(
+      (name) => uniqueQueryValue(url, name) !== null,
+    );
+    const agencyCode = uniqueQueryValue(url, 'agencyCode');
+    const module = uniqueQueryValue(url, 'Module');
     return (
       url.protocol === 'https:' &&
       !url.username &&
       !url.password &&
-      !url.port &&
       hostname === 'aca-prod.accela.com' &&
       url.pathname.toLowerCase() === '/tampa/cap/capdetail.aspx' &&
-      url.searchParams.getAll('agencyCode').length === 1 &&
-      url.searchParams.get('agencyCode')?.toUpperCase() === 'TAMPA' &&
-      url.searchParams.getAll('Module').length === 1 &&
-      url.searchParams.get('Module')?.toLowerCase() === 'building' &&
+      agencyCode?.toUpperCase() === 'TAMPA' &&
+      module?.toLowerCase() === 'building' &&
       hasRecordIds
     );
   } catch {
