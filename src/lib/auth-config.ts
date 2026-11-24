@@ -25,6 +25,7 @@
 //   } } } },
 
 import type { BetterAuthOptions } from 'better-auth';
+import { APIError } from 'better-auth/api';
 import { sendEmail } from '@/lib/email/send';
 import { env } from '@/lib/env';
 
@@ -61,9 +62,21 @@ export const authConfig: BetterAuthOptions = {
             text,
           }),
         });
-        if (!response.ok) throw new Error('Verification email could not be delivered');
+        if (!response.ok) {
+          const body = (await response.json().catch(() => null)) as { message?: string } | null;
+          const message = body?.message?.trim();
+          throw APIError.from('FORBIDDEN', {
+            message: message || 'Verification email could not be delivered. Try again in a moment.',
+            code: 'VERIFICATION_EMAIL_NOT_DELIVERED',
+          });
+        }
         const json = (await response.json()) as { id?: string };
-        if (!json.id) throw new Error('Verification email could not be delivered');
+        if (!json.id) {
+          throw APIError.from('FORBIDDEN', {
+            message: 'Verification email could not be delivered. Try again in a moment.',
+            code: 'VERIFICATION_EMAIL_NOT_DELIVERED',
+          });
+        }
         return;
       }
       // This host does not inject an email service. Fail the resend request

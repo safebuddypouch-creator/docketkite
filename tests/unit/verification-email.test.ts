@@ -39,4 +39,32 @@ describe('verification email', () => {
       expect.objectContaining({ method: 'POST' }),
     );
   });
+
+  it('reports when Resend will only email the account that owns it', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: false,
+        json: async () => ({
+          message:
+            'You can only send testing emails to your own email address (owner@resend.test). To send emails to other recipients, please verify a domain.',
+        }),
+      }),
+    );
+
+    await expect(
+      authConfig.emailVerification?.sendVerificationEmail?.({
+        user: {
+          id: 'user-1',
+          createdAt: new Date('2026-11-24T00:00:00.000Z'),
+          updatedAt: new Date('2026-11-24T00:00:00.000Z'),
+          email: 'other@example.test',
+          emailVerified: false,
+          name: 'Owner',
+        },
+        url: 'https://docketkite.apps.grok.bot/verify-email?token=abc',
+        token: 'abc',
+      }),
+    ).rejects.toThrow(/only send testing emails/i);
+  });
 });
