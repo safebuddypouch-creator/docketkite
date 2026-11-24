@@ -13,13 +13,39 @@ import { teamManagerInvitationEmail, teamTestingOwnerInvitationEmail } from '@/l
 import { env } from '@/lib/env';
 import { requireAuth, type SessionUser } from '@/lib/require-auth';
 import { sameOrigin } from '@/lib/same-origin';
-import { teamInvitationPageUrl } from '@/lib/team-invite-url';
+import { invitationAppUrl, teamInvitationPageUrl } from '@/lib/team-invite-url';
 
 export const dynamic = 'force-dynamic';
 const INVITATION_LIFETIME_MS = 7 * 24 * 60 * 60 * 1000;
 
 function hashToken(token: string): string {
   return createHash('sha256').update(token).digest('hex');
+}
+
+async function sendInvitationWithResend(input: {
+  to: string;
+  subject: string;
+  html: string;
+  text?: string;
+}): Promise<{ id: string }> {
+  const response = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      authorization: `Bearer ${env.RESEND_API_KEY}`,
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify({
+      from: 'DocketKite <noreply@docketkitepermits.com>',
+      to: [input.to],
+      subject: input.subject,
+      html: input.html,
+      text: input.text,
+    }),
+  });
+  if (!response.ok) throw new Error('Invitation email was not accepted');
+  const json = (await response.json()) as { id?: string };
+  if (!json.id) throw new Error('Invitation email was not accepted');
+  return { id: json.id };
 }
 
 export async function POST(request: Request) {
@@ -134,7 +160,7 @@ export async function POST(request: Request) {
   let inviteUrl: string;
   try {
     // Do not let the env schema's localhost fallback escape in a production email.
-    inviteUrl = teamInvitationPageUrl(token, process.env.NEXT_PUBLIC_APP_URL);
+    inviteUrl = teamInvitationPageUrl(token, invitationAppUrl(request));
   } catch {
     return NextResponse.json(
       {
@@ -157,21 +183,22 @@ export async function POST(request: Request) {
     },
   });
 
+  const message = isTestingWorkspace
+    ? teamTestingOwnerInvitationEmail({
+        teamName: team.name,
+        inviterName: user.name,
+        inviteUrl,
+      })
+    : teamManagerInvitationEmail({
+        teamName: team.name,
+        inviterName: user.name,
+        inviteUrl,
+      });
+
   try {
-    const delivery = await sendEmail({
-      to: email,
-      ...(isTestingWorkspace
-        ? teamTestingOwnerInvitationEmail({
-            teamName: team.name,
-            inviterName: user.name,
-            inviteUrl,
-          })
-        : teamManagerInvitationEmail({
-            teamName: team.name,
-            inviterName: user.name,
-            inviteUrl,
-          })),
-    });
+    const delivery = env.RESEND_API_KEY
+      ? await sendInvitationWithResend({ to: email, ...message })
+      : await sendEmail({ to: email, ...message });
     if (!delivery.id) throw new Error('The invitation recipient is suppressed.');
   } catch {
     await prisma.teamInvitation
