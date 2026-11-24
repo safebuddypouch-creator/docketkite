@@ -43,17 +43,39 @@ export const authConfig: BetterAuthOptions = {
   },
   emailVerification: {
     sendVerificationEmail: async ({ user, url }) => {
+      const href = verificationHref(url);
+      const html = `<p><a href="${href}">Verify your email</a></p>`;
+      const text = `Verify your email: ${url}`;
+      if (env.RESEND_API_KEY) {
+        const response = await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: {
+            authorization: `Bearer ${env.RESEND_API_KEY}`,
+            'content-type': 'application/json',
+          },
+          body: JSON.stringify({
+            from: 'DocketKite <onboarding@resend.dev>',
+            to: [user.email],
+            subject: 'Verify your email',
+            html,
+            text,
+          }),
+        });
+        if (!response.ok) throw new Error('Verification email could not be delivered');
+        const json = (await response.json()) as { id?: string };
+        if (!json.id) throw new Error('Verification email could not be delivered');
+        return;
+      }
       // This host does not inject an email service. Fail the resend request
       // instead of telling the person to check an inbox that will stay empty.
       if (!env.POLSIA_EMAIL_PROXY_URL) {
         throw new Error('Email delivery is not configured');
       }
-      const href = verificationHref(url);
       const result = await sendEmail({
         to: user.email,
         subject: 'Verify your email',
-        html: `<p><a href="${href}">Verify your email</a></p>`,
-        text: `Verify your email: ${url}`,
+        html,
+        text,
       });
       if (!result.id) throw new Error('Verification email could not be delivered');
     },

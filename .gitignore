@@ -24,7 +24,6 @@ lerna-debug.log*
 # Block every .env* variant (.env, .env.local, .env.production, .env.staging, …)
 # and keep only the committed .env.example documenting the shape.
 .env*
-!.env.example
 
 # IDE / editor
 .vscode/
@@ -47,3 +46,11 @@ lerna-debug.log*
 
 # Local Superpowers planning artifacts: never commit
 /docs/superpowers/
+
+.projects/cache
+.projects/vault
+.projects/state.test.json
+.projects/state.local.test.json
+.env
+.env.*
+!.env.example
