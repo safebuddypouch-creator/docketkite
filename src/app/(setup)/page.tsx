@@ -86,6 +86,13 @@ export default function HomePage() {
         </div>
       </header>
 
+      <p className={styles.sheetBar}>
+        <span>Sheet 01</span>
+        <span>Cover</span>
+        <span>City of Tampa</span>
+        <span>Residential remodel permits</span>
+      </p>
+
       <section className={styles.hero} id="top">
         <Reveal as="div" trigger="load" distance={12} className={styles.heroCopy}>
           <p className={styles.eyebrow}>
@@ -149,11 +156,11 @@ export default function HomePage() {
             <svg aria-hidden="true" className={styles.mapRoute} viewBox="0 0 440 270" fill="none">
               <path
                 d="M-12 205c60-2 64-65 122-64 56 0 54 57 113 46 51-9 48-80 100-78 45 2 61 39 126 20"
-                stroke="#C5E867"
+                stroke="#F0C14B"
                 strokeWidth="2.5"
                 strokeDasharray="5 7"
               />
-              <circle cx="212" cy="187" r="6" fill="#DDF17A" stroke="#1A3028" strokeWidth="4" />
+              <circle cx="212" cy="187" r="6" fill="#F0C14B" stroke="#152033" strokeWidth="4" />
             </svg>
             <span className={styles.mapDistrict}>TAMPA</span>
           </div>

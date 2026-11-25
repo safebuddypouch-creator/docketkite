@@ -47,7 +47,7 @@ const offers = pricingContent.tiers.flatMap((tier) => {
 
 export default function PricingPage() {
   return (
-    <main className="mx-auto flex w-full max-w-6xl flex-col px-4 pb-20 pt-10 sm:px-6 sm:pt-16">
+    <main className="dk-yard mx-auto flex w-full max-w-6xl flex-col px-4 pb-20 pt-10 sm:px-6 sm:pt-16">
       <PricingJsonLd
         name="DocketKite private team workspace"
         description={pageDescription}

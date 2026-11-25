@@ -10,13 +10,13 @@ export const siteDescription =
 // values are achromatic placeholders, not a palette.
 export const brandVisual = {
   /** PWA browser-UI / status-bar color — usually your background or primary. */
-  themeColor: '#173c30',
+  themeColor: '#1c1915',
   /** PWA splash + install background. */
-  backgroundColor: '#f6f7f1',
+  backgroundColor: '#e7dfd0',
   /** Social-share (OG/Twitter) image. */
   og: {
-    background: '#173c30',
-    foreground: '#f4f5eb',
+    background: '#1c1915',
+    foreground: '#f7f3ea',
     /** Second line under the site name; '' hides it. */
     tagline: 'Permit updates reach the jobsite before the schedule slips.',
     /** Optional https PNG/JPEG background photo; '' keeps the plain-color card. */

@@ -30,13 +30,11 @@ export const metadata: Metadata = {
 
 export default function ContactPage() {
   return (
-    <main className="min-h-[calc(100dvh-3.5rem)] bg-background text-foreground">
+    <main className="dk-yard min-h-[calc(100dvh-3.5rem)] text-foreground">
       <div className="mx-auto grid w-full max-w-6xl gap-9 px-4 py-10 sm:px-6 sm:py-14 lg:grid-cols-[minmax(0,0.82fr)_minmax(25rem,1fr)] lg:items-start lg:gap-16 lg:px-8 lg:py-20">
         <header className="flex flex-col items-start gap-5 lg:pt-5">
-          <p className="border-l-2 border-primary pl-3 text-xs font-semibold uppercase tracking-[0.16em] text-primary">
-            DocketKite · City of Tampa permit desk
-          </p>
-          <h1 className="max-w-xl font-display text-4xl font-semibold leading-[1.08] tracking-tight sm:text-5xl lg:text-6xl">
+          <p className="dk-kicker">DocketKite · City of Tampa permit desk</p>
+          <h1 className="max-w-xl font-display text-5xl font-semibold uppercase leading-[0.92] tracking-wide sm:text-6xl lg:text-7xl">
             Questions about a permit?
           </h1>
           <p className="max-w-lg text-base leading-7 text-muted-foreground sm:text-lg sm:leading-8">
@@ -58,28 +56,32 @@ export default function ContactPage() {
           </Link>
         </header>
 
-        <section
-          aria-labelledby="contact-form-title"
-          className="rounded-xl border border-border bg-card p-5 shadow-[0_18px_55px_var(--elevation-1)] sm:p-7 lg:p-8"
-        >
-          <div className="mb-6 border-b border-border pb-5">
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">
-              Contact the team
-            </p>
-            <h2
-              id="contact-form-title"
-              className="mt-2 font-display text-2xl font-semibold tracking-tight text-card-foreground sm:text-3xl"
-            >
-              Send us a question
-            </h2>
-            <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              We&apos;ll use your email address to respond to your message.
+        <section aria-labelledby="contact-form-title" className="dk-sheet">
+          <div className="dk-titleblock">
+            <span>Field ticket</span>
+            <span>City of Tampa</span>
+            <span>Reply by email</span>
+          </div>
+          <div className="p-5 sm:p-7 lg:p-8">
+            <div className="mb-6 border-b-2 border-foreground pb-5">
+              <p className="font-display text-sm font-semibold uppercase tracking-[0.14em] text-primary">
+                Contact the team
+              </p>
+              <h2
+                id="contact-form-title"
+                className="mt-2 font-display text-2xl font-semibold tracking-tight text-card-foreground sm:text-3xl"
+              >
+                Send us a question
+              </h2>
+              <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                We&apos;ll use your email address to respond to your message.
+              </p>
+            </div>
+            <ContactForm />
+            <p className="mt-5 border-t-2 border-foreground pt-4 text-xs leading-5 text-muted-foreground">
+              Please don&apos;t include passwords, payment details, or other sensitive information.
             </p>
           </div>
-          <ContactForm />
-          <p className="mt-5 border-t border-border pt-4 text-xs leading-5 text-muted-foreground">
-            Please don&apos;t include passwords, payment details, or other sensitive information.
-          </p>
         </section>
       </div>
     </main>

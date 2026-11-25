@@ -30,16 +30,19 @@ export const metadata: Metadata = {
 
 export default function FaqPage() {
   return (
-    <main className="relative isolate overflow-hidden bg-background text-foreground">
+    <main className="dk-yard relative isolate overflow-hidden text-foreground">
       <div className="mx-auto flex w-full max-w-5xl flex-col gap-10 px-4 py-12 sm:px-6 sm:py-16 lg:px-8 lg:py-20">
         <FaqJsonLd items={faqContent.items} />
 
-        <header className="mx-auto flex max-w-3xl flex-col items-center gap-5 text-center">
-          <p className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-primary">
-            <span aria-hidden="true" className="size-2 rounded-full bg-accent" />
-            DocketKite team workflows
-          </p>
-          <h1 className="font-display text-4xl font-semibold leading-[1.08] tracking-tight sm:text-5xl lg:text-6xl">
+        <header className="flex max-w-3xl flex-col items-start gap-5">
+          <p className="dk-kicker">DocketKite team workflows</p>
+          <div className="dk-titleblock w-full">
+            <span>Sheet 03</span>
+            <span>RFI log</span>
+            <span>City of Tampa</span>
+            <span>Residential remodel permits</span>
+          </div>
+          <h1 className="font-display text-5xl font-semibold uppercase leading-[0.92] tracking-wide sm:text-6xl lg:text-7xl">
             Three permit workflows, explained.
           </h1>
           <p className="max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg sm:leading-8">
@@ -47,13 +50,13 @@ export default function FaqPage() {
           </p>
         </header>
 
-        <ol className="m-0 list-none p-0">
+        <ol className="dk-rfi m-0 list-none bg-card p-0">
           {faqContent.items.map((item, index) => (
             <li key={item.id} className="border-t border-border py-6 last:border-b sm:py-8">
               <article className="grid gap-3 sm:grid-cols-[4rem_minmax(0,1fr)] sm:gap-5">
                 <span
                   aria-hidden="true"
-                  className="pt-1 font-mono text-xs font-semibold tracking-[0.12em] text-primary"
+                  className="pt-1 font-display text-3xl font-semibold leading-none tracking-[0.08em] text-primary"
                 >
                   0{index + 1}
                 </span>
