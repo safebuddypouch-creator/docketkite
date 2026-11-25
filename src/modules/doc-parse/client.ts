@@ -1,8 +1,8 @@
 // @polsia:framework-owned - DO NOT EDIT. Code installed by polsia/modules/doc-parse@0.2.0. Drift = commit rejected.
 //
-// Server-side Polsia doc-parse helper. No provider SDK, no provider key in the
-// app: `parseDocument` goes through the Polsia docs proxy with the company API
-// key. This file deliberately does NOT import `server-only`: that marker
+// Installed doc-parse helper. DocketKite letter extraction does not call it
+// and does not read a Polsia API key; extraction uses OpenRouter. This file
+// deliberately does NOT import `server-only`: that marker
 // throws outside a React server bundle, which would break the cron use case
 // (`npx --yes tsx jobs/x.ts`). The browser guard below is its runtime
 // equivalent. Full guide in AGENT.md.
@@ -154,7 +154,7 @@ export class DocParseUnavailableError extends Error {
 /**
  * The call must be fixed, retrying it as is fails again: 400
  * `invalid_request` | `invalid_schema` | `unsupported_model` (`detail` says
- * why), 404 `file_not_found`, 401 (company key), or any other unexpected 4xx.
+ * why), 404 `file_not_found`, 401, or any other unexpected 4xx.
  */
 export class DocParseError extends Error {
   readonly status: number;
@@ -175,8 +175,8 @@ function polsiaApiBaseUrl() {
   return env.POLSIA_API_BASE_URL.replace(/\/+$/, '');
 }
 
-// Business errors are `{ ok: false, error: "<code>" }`; the frozen company-token
-// auth contract (401) is `{ error: { message, type, code } }`.
+// Business errors are `{ ok: false, error: "<code>" }`; a 401 body is
+// `{ error: { message, type, code } }`.
 function errorCodeOf(body: unknown): string {
   if (!body || typeof body !== 'object' || !('error' in body)) {
     return '';
