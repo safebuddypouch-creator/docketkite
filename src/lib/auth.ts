@@ -50,7 +50,6 @@ const GOOGLE_PROVIDER_ID = 'google';
  */
 const GOOGLE_CALLBACK_PATH = `/oauth2/callback/${GOOGLE_PROVIDER_ID}`;
 const GOOGLE_CALLBACK_ENDPOINT = `/callback/${GOOGLE_PROVIDER_ID}`;
-const GOOGLE_BROKER_PATH = '/api/v2/app-auth/google';
 const GOOGLE_SCOPES = ['openid', 'email', 'profile'];
 const GOOGLE_AUTHORIZATION_URL = 'https://accounts.google.com/o/oauth2/v2/auth';
 const GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token';
@@ -170,36 +169,17 @@ function ownGoogle(): GenericOAuthConfig | undefined {
   });
 }
 
-/** The Polsia Google sign-in broker (a standard OAuth provider); `undefined` unless Polsia injects its env. */
-function polsiaGoogle(): GenericOAuthConfig | undefined {
-  const clientId = env.POLSIA_GOOGLE_SIGNIN_CLIENT_ID;
-  const apiBaseURL = env.POLSIA_API_BASE_URL;
-  const apiKey = env.POLSIA_API_KEY;
-  if (!clientId || !apiBaseURL || !apiKey) {
-    return undefined;
-  }
-
-  const brokerURL = (action: string) =>
-    new URL(`${GOOGLE_BROKER_PATH}/${action}`, apiBaseURL).toString();
-
-  return googleProvider(clientId, apiKey, {
-    authorizationUrl: brokerURL('authorize'),
-    tokenUrl: brokerURL('token'),
-    userInfoUrl: brokerURL('userinfo'),
-  });
-}
-
 /**
- * Google sign-in as one generic provider `google`: the owner's own client when set, otherwise
- * the Polsia broker. None when the app configures `socialProviders.google`: the generic
- * provider would shadow it.
+ * Google sign-in as one generic provider `google`: the owner's own client when both
+ * id and secret are set. None when the app configures `socialProviders.google`: the
+ * generic provider would shadow it.
  */
 function googleSignIn() {
   if (authConfig.socialProviders?.google) {
     return [];
   }
 
-  const config = ownGoogle() ?? polsiaGoogle();
+  const config = ownGoogle();
   if (!config) {
     return [];
   }

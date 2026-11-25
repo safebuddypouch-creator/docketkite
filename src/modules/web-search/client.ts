@@ -146,16 +146,6 @@ function polsiaApiBaseUrl() {
   return env.POLSIA_API_BASE_URL.replace(/\/+$/, '');
 }
 
-function polsiaApiKey() {
-  const key = env.POLSIA_API_KEY;
-  if (!key) {
-    throw new WebSearchConfigurationError(
-      'POLSIA_API_KEY is missing. Polsia injects it into deployed apps and cron jobs; local dev must set it manually.',
-    );
-  }
-  return key;
-}
-
 // Business errors are `{ ok: false, error: "<code>" }`; the frozen company-token
 // auth contract (401) is `{ error: { message, type, code } }`.
 function errorCodeOf(body: unknown): string {
@@ -249,7 +239,6 @@ async function polsiaPost(path: string, body: Record<string, unknown>): Promise<
   const res = await send(`${polsiaApiBaseUrl()}${path}`, {
     method: 'POST',
     headers: {
-      authorization: `Bearer ${polsiaApiKey()}`,
       accept: 'application/json',
       'content-type': 'application/json',
     },

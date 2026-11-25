@@ -12,7 +12,6 @@ import {
 } from '@/lib/polsia-posthog';
 
 const ENV = {
-  POLSIA_ANALYTICS_POSTHOG_TOKEN: 'phc_customerApps123',
   POLSIA_ANALYTICS_POSTHOG_HOST: 'https://ingest.example.com',
   POLSIA_ANALYTICS_APP_ID: '4242',
 };
@@ -29,14 +28,14 @@ function pageview(properties: Record<string, unknown>, extra: Partial<CaptureRes
 }
 
 describe('posthogCaptureFromEnv', () => {
-  it('reads the three deploy-injected values', () => {
-    expect(posthogCaptureFromEnv(ENV)).toEqual(CAPTURE);
+  it('stays off', () => {
+    expect(posthogCaptureFromEnv(ENV)).toBeNull();
   });
 
   it.each(['staging:42', 'pr-11311:42', 'preview-srv-d4abc:42'])(
-    'accepts the environment-scoped app id used outside production (%s)',
+    'stays off for an environment-scoped app id (%s)',
     (appId) => {
-      expect(posthogCaptureFromEnv({ ...ENV, POLSIA_ANALYTICS_APP_ID: appId })?.appId).toBe(appId);
+      expect(posthogCaptureFromEnv({ ...ENV, POLSIA_ANALYTICS_APP_ID: appId })).toBeNull();
     },
   );
 
@@ -49,7 +48,6 @@ describe('posthogCaptureFromEnv', () => {
   );
 
   it.each([
-    ['POLSIA_ANALYTICS_POSTHOG_TOKEN', 'sk_live_123'],
     ['POLSIA_ANALYTICS_POSTHOG_HOST', 'http://ingest.example.com'],
     ['POLSIA_ANALYTICS_POSTHOG_HOST', 'https://ingest.example.com/e'],
     ['POLSIA_ANALYTICS_POSTHOG_HOST', "https://ingest.example.com; script-src 'unsafe-inline'"],

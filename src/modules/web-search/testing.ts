@@ -15,7 +15,7 @@
 // - node test (`// @vitest-environment node` on the first line: `search` and
 //   `fetchPage` refuse to run where `window` exists): stub `fetch` with a wire
 //   body and its status, and mock `@/lib/env` (validated at import in node).
-//     vi.mock('@/lib/env', () => ({ env: { POLSIA_API_BASE_URL: 'https://polsia.test', POLSIA_API_KEY: 'test-key' } }));
+//     vi.mock('@/lib/env', () => ({ env: { POLSIA_API_BASE_URL: 'https://polsia.test' } }));
 //     vi.stubGlobal('fetch', async () => Response.json(SAMPLE_PAGE_BODY));
 //     const { status, body } = SAMPLE_ERROR_RESPONSES.quotaExceeded;
 //     vi.stubGlobal('fetch', async () => Response.json(body, { status }));

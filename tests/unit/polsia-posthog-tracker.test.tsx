@@ -171,10 +171,9 @@ describe('root layout', () => {
     expect(await renderShell()).toBeUndefined();
   });
 
-  it('mounts the tracker with the injected token, origin and app id', async () => {
-    vi.stubEnv('POLSIA_ANALYTICS_POSTHOG_TOKEN', CAPTURE.token);
+  it('stays off when an ingestion host and app id are present', async () => {
     vi.stubEnv('POLSIA_ANALYTICS_POSTHOG_HOST', CAPTURE.host);
     vi.stubEnv('POLSIA_ANALYTICS_APP_ID', CAPTURE.appId);
-    expect(JSON.parse((await renderShell()) ?? 'null')).toEqual(CAPTURE);
+    expect(await renderShell()).toBeUndefined();
   });
 });

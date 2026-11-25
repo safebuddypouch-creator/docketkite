@@ -16,7 +16,6 @@ afterEach(() => {
 test('doc-parse preserves valid partial fields from its documented sample answer', async () => {
   vi.stubEnv('SKIP_ENV_VALIDATION', '1');
   vi.stubEnv('POLSIA_API_BASE_URL', 'https://polsia.test');
-  vi.stubEnv('POLSIA_API_KEY', 'synthetic-test-api-key');
   vi.stubGlobal('fetch', docParseFetch(DOC_PARSE_ANSWERS.offRuleField));
   vi.resetModules();
 
@@ -34,7 +33,6 @@ test('doc-parse preserves valid partial fields from its documented sample answer
 test('doc-parse translates its documented provider outage sample to a retryable error', async () => {
   vi.stubEnv('SKIP_ENV_VALIDATION', '1');
   vi.stubEnv('POLSIA_API_BASE_URL', 'https://polsia.test');
-  vi.stubEnv('POLSIA_API_KEY', 'synthetic-test-api-key');
   vi.stubGlobal('fetch', docParseFetch(DOC_PARSE_ANSWERS.providerUnavailable));
   vi.resetModules();
 
