@@ -9,11 +9,9 @@ import {
 } from '@/lib/contracts/file-upload';
 import { env } from '@/lib/env';
 
-const R2_PROXY_PATH = '/api/proxy/r2';
 const MINT_PATH = '/uploads';
 const CONFIRM_PATH = '/uploads/confirm';
 const MULTIPART_PATH = '/upload';
-const FILES_PATH = '/files/';
 const JSON_CONTENT_TYPE = 'application/json';
 const MULTIPART_CONTENT_TYPE = 'multipart/form-data';
 const MINT_TIMEOUT_MS = 20_000;
@@ -21,7 +19,6 @@ const MINT_TIMEOUT_MS = 20_000;
 const CONFIRM_TIMEOUT_MS = 90_000;
 /** The multipart fallback carries the bytes (up to 1 GB), so it gets far longer. */
 const MULTIPART_TIMEOUT_MS = 600_000;
-const SIGN_TIMEOUT_MS = 20_000;
 const MAX_BODY_BYTES = 4_096;
 const HTTP_FOUND = 302;
 const HTTP_BAD_REQUEST = 400;
@@ -29,7 +26,6 @@ const HTTP_UNAUTHORIZED = 401;
 const HTTP_FORBIDDEN = 403;
 const HTTP_NOT_FOUND = 404;
 const HTTP_PAYLOAD_TOO_LARGE = 413;
-const HTTP_BAD_GATEWAY = 502;
 const HTTP_SERVICE_UNAVAILABLE = 503;
 const RESPONSE_HEADERS = { 'cache-control': 'no-store', 'referrer-policy': 'no-referrer' };
 /**
@@ -48,9 +44,6 @@ const UNAUTHORIZED = 'unauthorized';
 const UNAUTHORIZED_MESSAGE = 'You are not allowed to upload files.';
 const FILE_NOT_FOUND = 'file_not_found';
 const FILE_NOT_FOUND_MESSAGE = 'File not found.';
-const KEY_SEPARATOR = '/';
-/** Key segments refused before any call: they would rewrite the Polsia path. */
-const UNSAFE_KEY_SEGMENTS = ['', '.', '..'];
 const ALLOWED_PROTOCOLS = ['http:', 'https:'];
 const WILDCARD = '*';
 /** `<slug>.[staging.]polsia.(app|io)`: one app served on both platform domains. */
@@ -114,19 +107,6 @@ export function signedRedirect(url: string): Response {
     status: HTTP_FOUND,
     headers: { location: url, ...SIGNED_REDIRECT_HEADERS },
   });
-}
-
-/**
- * R2 proxy base URL, resolved at request time: POLSIA_R2_BASE_URL, falling
- * back to POLSIA_API_BASE_URL for deployments that only inject the general
- * API origin. Null when neither is configured.
- */
-function r2BaseUrl(): string | null {
-  const origin = env.POLSIA_R2_BASE_URL || process.env.POLSIA_API_BASE_URL;
-  if (!origin) {
-    return null;
-  }
-  return `${origin.replace(/\/+$/, '')}${R2_PROXY_PATH}`;
 }
 
 /** Exact HTTP(S) origin of `value`, or null for wildcards, credentials and garbage. */
@@ -255,47 +235,20 @@ export async function readUploadBody<T>(
 }
 
 /**
- * POSTs to the R2 proxy with the company credential and replays status + JSON body.
- * `body` is JSON for mint/confirm, the raw multipart stream for the fallback.
+ * Storage mint, confirm, and multipart relay need a platform credential this app
+ * does not use. Callers get the same not-configured response as a missing base URL.
  */
 async function relay(
-  path: string,
-  body: BodyInit,
-  contentType: string,
-  timeoutMs: number,
+  _path: string,
+  _body: BodyInit,
+  _contentType: string,
+  _timeoutMs: number,
 ): Promise<Response> {
-  const base = r2BaseUrl();
-  if (!env.POLSIA_API_KEY || !base) {
-    return failure(
-      HTTP_SERVICE_UNAVAILABLE,
-      'not_configured',
-      'File upload is not configured yet. Please try again later.',
-    );
-  }
-  const init: RequestInit & { duplex: 'half' } = {
-    method: 'POST',
-    headers: {
-      authorization: `Bearer ${env.POLSIA_API_KEY}`,
-      'content-type': contentType,
-    },
-    body,
-    cache: 'no-store',
-    redirect: 'error',
-    signal: AbortSignal.timeout(timeoutMs),
-    // Streams the multipart body instead of buffering the file in the app.
-    duplex: 'half',
-  };
-  try {
-    const upstream = await fetch(`${base}${path}`, init);
-    const payload: unknown = await upstream.json();
-    return Response.json(payload, { status: upstream.status, headers: RESPONSE_HEADERS });
-  } catch {
-    return failure(
-      HTTP_BAD_GATEWAY,
-      'upstream_unavailable',
-      'Polsia could not be reached. Please try again.',
-    );
-  }
+  return failure(
+    HTTP_SERVICE_UNAVAILABLE,
+    'not_configured',
+    'File upload is not configured yet. Please try again later.',
+  );
 }
 
 /** Asks Polsia for a signed upload link. Replays the upstream status and body. */
@@ -329,15 +282,6 @@ export async function relayMultipart(request: Request): Promise<Response> {
   return relay(MULTIPART_PATH, request.body, contentType, MULTIPART_TIMEOUT_MS);
 }
 
-/** `company_1/private/a b.pdf` -> `company_1/private/a%20b.pdf`; null for an empty or dot segment. */
-function filePath(key: string): string | null {
-  const segments = key.split(KEY_SEPARATOR);
-  if (segments.some((segment) => UNSAFE_KEY_SEGMENTS.includes(segment))) {
-    return null;
-  }
-  return segments.map(encodeURIComponent).join(KEY_SEPARATOR);
-}
-
 /** `?download=true[&filename=]` of a `fileUrl` link; any other query is dropped. */
 export function downloadOptionsOf(request: Request): SignOptions {
   const query = new URL(request.url).searchParams;
@@ -347,42 +291,10 @@ export function downloadOptionsOf(request: Request): SignOptions {
   return { download: true, filename: query.get(DownloadQuery.Filename) || undefined };
 }
 
-function signQuery({ ttlSeconds, download, filename }: SignOptions): string {
-  const query = new URLSearchParams();
-  if (ttlSeconds !== undefined) {
-    query.set('ttl_seconds', String(ttlSeconds));
-  }
-  if (download) {
-    query.set(DownloadQuery.Download, DownloadQuery.On);
-  }
-  if (filename !== undefined) {
-    query.set(DownloadQuery.Filename, filename);
-  }
-  const text = query.toString();
-  return text ? `?${text}` : '';
-}
-
 /**
- * Signed link to one file of this company: the `Location` of the 302 Polsia's
- * `GET /files/<key>` answers. Null for an unknown key, another company's key,
- * a refused option, a missing configuration or an unreachable Polsia.
+ * Signed links need a platform credential this app does not use.
+ * Null for every key, including an unknown one.
  */
-export async function signedUrlOf(key: string, options: SignOptions): Promise<string | null> {
-  const base = r2BaseUrl();
-  const path = filePath(key);
-  if (!env.POLSIA_API_KEY || !base || !path) {
-    return null;
-  }
-  try {
-    const upstream = await fetch(`${base}${FILES_PATH}${path}${signQuery(options)}`, {
-      headers: { authorization: `Bearer ${env.POLSIA_API_KEY}` },
-      cache: 'no-store',
-      redirect: 'manual',
-      signal: AbortSignal.timeout(SIGN_TIMEOUT_MS),
-    });
-    await upstream.body?.cancel();
-    return upstream.status === HTTP_FOUND ? upstream.headers.get('location') : null;
-  } catch {
-    return null;
-  }
+export function signedUrlOf(_key: string, _options: SignOptions): Promise<string | null> {
+  return Promise.resolve(null);
 }

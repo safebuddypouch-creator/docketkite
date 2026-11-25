@@ -1,29 +1,16 @@
 // @polsia:framework-owned — DO NOT EDIT. Code installed by polsia/template-next@0.3.19.
 //
-// The deploy-injected PostHog capture config. Polsia injects it only for the live app of a
-// company whose capture is on; previews and test copies never get it. Server-only: the
-// root layout passes the values to the client tracker as props, and proxy.ts allows the
-// ingestion origin in connect-src. Client code never reads these names.
+// Page-view capture is off. The root layout and proxy.ts still call these helpers;
+// an ingestion origin is added only when a capture config is passed in.
 
 import type { CspExtraSources } from '@/lib/csp';
 import type { PosthogCapture } from '@/lib/polsia-posthog';
 
-const TOKEN = /^phc_[A-Za-z0-9]+$/;
-/** A bare https origin: it is written into the CSP header. */
-const ORIGIN = /^https:\/\/[a-z0-9-]+(?:\.[a-z0-9-]+)+(?::\d{1,5})?$/;
-/** Polsia's app id; outside production it carries the environment (`staging:123`, `pr-11311:123`). */
-const APP_ID = /^(?:[a-z0-9-]{1,64}:)?[1-9]\d{0,15}$/;
-
-/** The capture config, or null when a value is missing or malformed: no PostHog capture. */
+/** Page-view capture stays off. No capture config is read from the environment. */
 export function posthogCaptureFromEnv(
-  env: Readonly<Record<string, string | undefined>>,
+  _env: Readonly<Record<string, string | undefined>>,
 ): PosthogCapture | null {
-  const token = env.POLSIA_ANALYTICS_POSTHOG_TOKEN?.trim();
-  const host = env.POLSIA_ANALYTICS_POSTHOG_HOST?.trim();
-  const appId = env.POLSIA_ANALYTICS_APP_ID?.trim();
-  if (!token || !host || !appId) return null;
-  if (!TOKEN.test(token) || !ORIGIN.test(host) || !APP_ID.test(appId)) return null;
-  return { token, host, appId };
+  return null;
 }
 
 /**

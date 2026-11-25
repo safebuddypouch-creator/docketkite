@@ -45,8 +45,6 @@ export const env = createEnv({
     // @polsia:contrib better-auth end
     // @polsia:contrib stripe-billing start
     POLSIA_API_BASE_URL: z.string().url().default('https://polsia.com'),
-    POLSIA_API_KEY: z.string().min(1).optional(),
-    POLSIA_API_TOKEN: z.string().min(1).optional(),
     // The account's own Stripe secret and webhook signing secret. Never a publishable key.
     STRIPE_SECRET_KEY: z.string().min(1).optional(),
     STRIPE_WEBHOOK_SECRET: z.string().min(1).optional(),
@@ -101,8 +99,6 @@ export const env = createEnv({
     // @polsia:contrib better-auth end
     // @polsia:contrib stripe-billing start
     POLSIA_API_BASE_URL: process.env.POLSIA_API_BASE_URL,
-    POLSIA_API_KEY: process.env.POLSIA_API_KEY,
-    POLSIA_API_TOKEN: process.env.POLSIA_API_TOKEN,
     STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
     STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,
     // @polsia:contrib stripe-billing end

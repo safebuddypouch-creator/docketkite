@@ -54,12 +54,10 @@ export interface RecordSubmissionResult {
 export async function recordSubmission(
   input: RecordSubmissionInput,
 ): Promise<RecordSubmissionResult> {
-  // POLSIA_API_KEY via process.env (platform-injected; not in typed env — ai/stripe declare it).
   const res = await fetch(`${proxyBaseUrl()}/submissions`, {
     method: 'POST',
     headers: {
       'content-type': 'application/json',
-      authorization: `Bearer ${process.env.POLSIA_API_KEY ?? ''}`,
     },
     body: JSON.stringify({
       source: input.source,

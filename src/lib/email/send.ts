@@ -47,7 +47,6 @@ export async function sendEmail(
       .replace(/<[^>]+>/g, ' ')
       .replace(/\s+/g, ' ')
       .trim();
-  // POLSIA_API_KEY via process.env (platform-injected; not in typed env — ai/stripe declare it).
   const res = await fetch(url, {
     method: 'POST',
     // Bound connection and response-body reads; allow a caller's earlier deadline.
@@ -56,7 +55,6 @@ export async function sendEmail(
       : AbortSignal.timeout(30_000),
     headers: {
       'content-type': 'application/json',
-      authorization: `Bearer ${process.env.POLSIA_API_KEY ?? ''}`,
     },
     body: JSON.stringify({
       to: input.to,
