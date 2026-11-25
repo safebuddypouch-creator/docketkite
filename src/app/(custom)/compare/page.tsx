@@ -41,13 +41,17 @@ export const metadata: Metadata = {
 
 export default function ComparePage() {
   return (
-    <main className="relative isolate overflow-hidden bg-background text-foreground">
+    <main className="dk-yard relative isolate overflow-hidden text-foreground">
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-12 px-4 py-12 sm:px-6 sm:py-16 lg:px-8 lg:py-20">
         <Reveal as="header" trigger="load" className="flex max-w-4xl flex-col items-start gap-5">
-          <p className="border-l-2 border-primary pl-3 text-xs font-semibold uppercase tracking-[0.16em] text-primary">
-            {comparisonContent.eyebrow}
-          </p>
-          <h1 className="max-w-3xl font-display text-4xl font-semibold leading-[1.08] tracking-tight sm:text-5xl lg:text-6xl">
+          <p className="dk-kicker">{comparisonContent.eyebrow}</p>
+          <div className="dk-titleblock w-full">
+            <span>Sheet 02</span>
+            <span>Coverage</span>
+            <span>City of Tampa</span>
+            <span>Residential remodel permits</span>
+          </div>
+          <h1 className="max-w-3xl font-display text-5xl font-semibold uppercase leading-[0.92] tracking-wide sm:text-6xl lg:text-7xl">
             {comparisonContent.title}
           </h1>
           <p className="max-w-3xl text-base leading-7 text-muted-foreground sm:text-lg sm:leading-8">
@@ -204,7 +208,7 @@ export default function ComparePage() {
         <Reveal
           id="comparison-cta"
           as="section"
-          className="grid gap-4 rounded-xl bg-primary p-6 text-primary-foreground sm:grid-cols-[1fr_auto] sm:items-center sm:gap-8 sm:p-8"
+          className="grid gap-4 border-2 border-foreground bg-primary p-6 text-primary-foreground shadow-[6px_6px_0_#1c1915] sm:grid-cols-[1fr_auto] sm:items-center sm:gap-8 sm:p-8 dark:shadow-[6px_6px_0_#f0c14b]"
         >
           <div className="grid gap-2">
             <h2 className="font-display text-2xl font-semibold">{comparisonContent.cta.title}</h2>

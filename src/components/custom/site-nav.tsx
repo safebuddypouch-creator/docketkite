@@ -128,14 +128,15 @@ export function SiteNav() {
     slot.type === 'link' ? isActive(slot.item.href) : slot.items.some((i) => isActive(i.href));
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="sticky top-0 z-40 w-full border-b-2 border-foreground bg-background">
+      <div className="dk-caution" aria-hidden="true" />
       <nav
         aria-label="Primary"
         className="mx-auto flex h-14 max-w-screen-xl items-center gap-2 px-4"
       >
         <Link
           href="/"
-          className="mr-2 shrink-0 truncate text-base font-semibold tracking-tight max-[359px]:mr-0"
+          className="mr-2 shrink-0 truncate font-display text-xl font-semibold uppercase tracking-[0.14em] max-[359px]:mr-0"
         >
           {siteName}
         </Link>
@@ -366,7 +367,8 @@ export function SiteFooter() {
   if (footer.length === 0) return null;
 
   return (
-    <footer className="border-t border-border">
+    <footer className="border-t-2 border-foreground bg-card">
+      <div className="dk-caution" aria-hidden="true" />
       <nav
         aria-label="Footer"
         className="mx-auto flex max-w-screen-xl flex-wrap items-center gap-1 px-4 py-6 text-sm"
