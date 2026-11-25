@@ -16,6 +16,7 @@
 import 'server-only';
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
+import { companyNotificationInbox } from '@/lib/email/company-inbox';
 import { deliverEmail } from '@/lib/email/deliver';
 import { recordSubmission } from '@/lib/email/submissions';
 import { notificationEmail } from '@/lib/email/templates';
@@ -97,7 +98,7 @@ async function notifyCompany(email: string, submissionId: string) {
   }
 
   // Absent when the company has no inbox address yet — nothing to fall back to.
-  const to = env.POLSIA_COMPANY_EMAIL;
+  const to = companyNotificationInbox(env.POLSIA_COMPANY_EMAIL);
   if (!to) return;
 
   try {

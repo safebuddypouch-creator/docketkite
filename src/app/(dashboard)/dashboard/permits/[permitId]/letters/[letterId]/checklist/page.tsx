@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 import { PermitCorrectionChecklistView } from '@/components/custom/permit-correction-checklist';
 
 export const metadata: Metadata = {
-  title: 'Correction checklist — DocketKite',
+  title: 'Correction checklist',
   description: 'A source-linked checklist of confirmed corrections from your permit letter.',
 };
 

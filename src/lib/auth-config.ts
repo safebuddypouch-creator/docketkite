@@ -27,6 +27,16 @@
 import type { BetterAuthOptions } from 'better-auth';
 import { APIError } from 'better-auth/api';
 import { deliverEmail } from '@/lib/email/deliver';
+import { rewriteSignupValidationResponse } from '@/lib/signup-validation';
+
+const plainSignupErrors = {
+  id: 'docketkite-plain-signup-errors',
+  async onResponse(response: Response) {
+    const rewritten = await rewriteSignupValidationResponse(response);
+    if (!rewritten) return;
+    return { response: rewritten };
+  },
+};
 
 const PUBLISHED_ORIGIN = 'https://docketkite.apps.grok.bot';
 const PUBLISHED_HOST = /(?:^|\.)apps\.grok\.bot$|(?:^|\.)(?:staging\.)?polsia\.(?:app|io)$/;
@@ -92,6 +102,7 @@ function publicVerificationUrl(url: string, request?: Request): string {
 }
 
 export const authConfig: BetterAuthOptions = {
+  plugins: [plainSignupErrors],
   emailAndPassword: {
     enabled: true,
   },

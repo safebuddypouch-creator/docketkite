@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { signUp } from '@/lib/auth-client';
+import { plainSignupValidationMessage, signupClientError } from '@/lib/signup-validation';
 import { authReturnUrl } from '@/lib/team-invite-url';
 
 // Email + password sign-up. Composes the template's base shadcn primitives
@@ -22,8 +23,13 @@ export function SignUpForm() {
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    setPending(true);
     setError(undefined);
+    const localError = signupClientError(email, password);
+    if (localError) {
+      setError(localError);
+      return;
+    }
+    setPending(true);
     const destination = authReturnUrl(window.location.search);
     const { error: signUpError } = await signUp.email({
       name,
@@ -33,7 +39,8 @@ export function SignUpForm() {
     });
     setPending(false);
     if (signUpError) {
-      setError(signUpError.message ?? 'Could not create your account. Try again.');
+      const message = plainSignupValidationMessage(signUpError.message ?? '');
+      setError(message || 'Could not create your account. Try again.');
       return;
     }
     window.location.assign(destination);

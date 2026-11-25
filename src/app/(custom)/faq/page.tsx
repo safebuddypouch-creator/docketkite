@@ -1,21 +1,30 @@
 // @polsia:user-owned — public DocketKite FAQ page.
 import type { Metadata } from 'next';
 import { faqContent } from '@/lib/faq/content';
+import { publicSocialImage, publicUrl } from '@/lib/public-origin';
 import { siteName } from '@/lib/site';
 import { FaqJsonLd } from '@/modules/faq-page/faq-jsonld';
 
 const description =
   'Answers about saved permit status history, the latest saved monitoring outcome, and assigning a project manager within the same team.';
 
+const canonical = publicUrl('/faq');
+const socialImage = publicSocialImage(siteName);
+
 export const metadata: Metadata = {
-  title: `Permit workflow FAQ — ${siteName}`,
+  title: 'Permit workflow FAQ',
   description,
-  alternates: { canonical: '/faq' },
+  alternates: { canonical },
   openGraph: {
-    title: `Permit workflow FAQ — ${siteName}`,
+    title: `Permit workflow FAQ · ${siteName}`,
     description,
-    url: '/faq',
+    url: canonical,
     type: 'website',
+    images: [socialImage],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    images: [socialImage.url],
   },
 };
 

@@ -3,12 +3,17 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { AuthShell } from '@/components/custom/auth-shell';
 import { SignUpForm } from '@/components/custom/sign-up-form';
+import { publicSocialImage } from '@/lib/public-origin';
 import { safeReturnPath } from '@/lib/team-invite-url';
 
+const socialImage = publicSocialImage();
+
 export const metadata: Metadata = {
-  title: 'Create your workspace — DocketKite',
+  title: 'Create your workspace',
   description:
     'Create an account and a DocketKite team. The shared 30-day setup window does not unlock permit records or PDF downloads; those require a verified active $299/month team subscription.',
+  openGraph: { images: [socialImage] },
+  twitter: { card: 'summary_large_image', images: [socialImage.url] },
 };
 
 type SignupPageProps = {

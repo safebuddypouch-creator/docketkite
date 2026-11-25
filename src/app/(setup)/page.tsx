@@ -5,19 +5,29 @@ import { BrandMark } from '@/components/custom/brand-mark';
 import { Reveal } from '@/components/custom/motion-kit/reveal';
 import { WaitlistForm } from '@/components/custom/waitlist-form';
 import { siteDescription, siteName } from '@/lib/brand';
+import { publicSocialImage, publicUrl } from '@/lib/public-origin';
 import styles from './home.module.css';
 
-const contactEmail = 'docketkite-8vdtwl@polsia.app';
-const contactHref = `mailto:${contactEmail}?subject=Tampa%20permit%20monitoring`;
+const pageTitle = `${siteName} — City of Tampa permit checks`;
+const canonical = publicUrl('/');
+const socialImage = publicSocialImage(siteName);
 
 export const metadata: Metadata = {
-  title: { absolute: `${siteName} — City of Tampa permit checks` },
+  title: { absolute: pageTitle },
   description: siteDescription,
-  alternates: { canonical: '/' },
+  alternates: { canonical },
   openGraph: {
-    title: `${siteName} — City of Tampa permit checks`,
+    title: pageTitle,
     description: siteDescription,
+    url: canonical,
     type: 'website',
+    images: [socialImage],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: pageTitle,
+    description: siteDescription,
+    images: [socialImage.url],
   },
 };
 
@@ -94,7 +104,7 @@ export default function HomePage() {
             <a className={styles.buttonPrimary} href="#early-access">
               Join early access <ArrowIcon />
             </a>
-            <a className={styles.buttonPrimary} href={contactHref}>
+            <a className={styles.buttonPrimary} href="/contact">
               Talk about a permit <ArrowIcon />
             </a>
             <a className={styles.textLink} href="#workflow">
@@ -245,7 +255,7 @@ export default function HomePage() {
               DocketKite is designed to make the next city update easier to catch, so the team can
               review the letter and plan a response sooner.
             </p>
-            <a href={contactHref} className={styles.inlineLink}>
+            <a href="/contact" className={styles.inlineLink}>
               Tell us which permit is stuck <ArrowIcon diagonal />
             </a>
           </div>
@@ -432,8 +442,8 @@ export default function HomePage() {
             Read the DocketKite FAQ
           </a>
         </p>
-        <a href={`mailto:${contactEmail}`} className={styles.footerEmail}>
-          {contactEmail} <ArrowIcon diagonal />
+        <a href="/contact" className={styles.footerEmail}>
+          Contact us <ArrowIcon diagonal />
         </a>
         <span className={styles.copyright}>© {new Date().getFullYear()} DocketKite</span>
       </footer>

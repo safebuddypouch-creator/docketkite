@@ -3,19 +3,28 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ContactForm } from '@/components/custom/contact-form';
 import { siteName } from '@/lib/brand';
+import { publicSocialImage, publicUrl } from '@/lib/public-origin';
 
 const description =
   'Ask DocketKite a question about City of Tampa permit checks or the current team workflow.';
 
+const canonical = publicUrl('/contact');
+const socialImage = publicSocialImage(siteName);
+
 export const metadata: Metadata = {
-  title: `Contact us · ${siteName}`,
+  title: 'Contact us',
   description,
-  alternates: { canonical: '/contact' },
+  alternates: { canonical },
   openGraph: {
     title: `Contact us · ${siteName}`,
     description,
-    url: '/contact',
+    url: canonical,
     type: 'website',
+    images: [socialImage],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    images: [socialImage.url],
   },
 };
 

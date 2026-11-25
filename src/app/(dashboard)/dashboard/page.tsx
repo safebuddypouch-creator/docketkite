@@ -9,7 +9,7 @@ type DashboardSearchParams = Promise<{
 }>;
 
 export const metadata: Metadata = {
-  title: 'Team workspace — DocketKite',
+  title: 'Team workspace',
   description: 'Set up team access and manage your City of Tampa permit workspace.',
 };
 
