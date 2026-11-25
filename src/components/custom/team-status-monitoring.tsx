@@ -238,20 +238,18 @@ export function TeamStatusMonitoring({ initialTeamId }: { initialTeamId: string 
               <li
                 key={detection.id}
                 data-testid={`status-change-${detection.id}`}
-                className="grid min-w-0 gap-4 rounded-xl border border-border bg-card p-4 shadow-sm sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center sm:p-5"
+                className="grid min-w-0 gap-4 rounded-xl border border-border bg-card p-4 shadow-sm sm:grid-cols-[minmax(12rem,1fr)_auto] sm:items-start sm:p-5"
               >
                 <div className="min-w-0">
                   <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
                     {detection.permitNumber || 'Permit number not added'} · {detection.permitType}
                   </p>
-                  <h2 className="mt-1 break-words text-base font-semibold text-foreground">
+                  <h2 className="mt-1 text-base font-semibold text-foreground">
                     {detection.projectName}
                   </h2>
-                  <p className="mt-1 break-words text-sm text-muted-foreground">
-                    {detection.address}
-                  </p>
+                  <p className="mt-1 text-sm text-muted-foreground">{detection.address}</p>
                   <a
-                    className="mt-2 inline-block break-all text-xs font-medium text-primary underline underline-offset-4"
+                    className="mt-2 block w-fit max-w-full text-xs font-medium text-primary underline underline-offset-4 hover:no-underline focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     href={detection.sourceUrl}
                     target="_blank"
                     rel="noreferrer"
@@ -259,31 +257,18 @@ export function TeamStatusMonitoring({ initialTeamId }: { initialTeamId: string 
                     Open official City record
                   </a>
                   <div className="mt-3 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-sm">
-                    <span className="break-words text-muted-foreground">
-                      {detection.previousStatus}
-                    </span>
+                    <span className="text-muted-foreground">{detection.previousStatus}</span>
                     <ArrowRight aria-hidden="true" className="size-4 shrink-0 text-primary" />
-                    <span className="break-words font-semibold text-foreground">
-                      {detection.newStatus}
-                    </span>
+                    <span className="font-semibold text-foreground">{detection.newStatus}</span>
                   </div>
                 </div>
-                <div className="flex min-w-0 flex-wrap items-center justify-between gap-3 border-t border-border pt-3 sm:flex-col sm:items-end sm:border-t-0 sm:pt-0">
+                <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-3 sm:flex-col sm:items-end sm:border-t-0 sm:pt-0">
                   <time className="text-xs text-muted-foreground" dateTime={detection.detectedAt}>
                     DocketKite check {formatDate(detection.detectedAt)}
                   </time>
                   <time className="text-xs text-muted-foreground" dateTime={detection.observedAt}>
                     City page read {formatDate(detection.observedAt)}
                   </time>
-                  <p className="w-full text-xs text-muted-foreground">
-                    Target:{' '}
-                    {detection.targetedRole === 'project_manager'
-                      ? 'project manager'
-                      : 'unassigned'}
-                    {' · '}Text: {detection.textDeliveryStatus} — {detection.textDeliveryMessage}
-                    {' · '}Checklist: {detection.checklistMatchStatus} —{' '}
-                    {detection.checklistMatchMessage}
-                  </p>
                   <Button asChild type="button" variant="outline" size="sm">
                     <Link
                       href={`/dashboard/permits/${encodeURIComponent(detection.permitId)}?teamId=${encodeURIComponent(selectedTeam?.id ?? '')}`}
@@ -293,6 +278,13 @@ export function TeamStatusMonitoring({ initialTeamId }: { initialTeamId: string 
                     </Link>
                   </Button>
                 </div>
+                <p className="text-xs leading-5 text-muted-foreground sm:col-span-2">
+                  Target:{' '}
+                  {detection.targetedRole === 'project_manager' ? 'project manager' : 'unassigned'}
+                  {' · '}Text: {detection.textDeliveryStatus} — {detection.textDeliveryMessage}
+                  {' · '}Checklist: {detection.checklistMatchStatus} —{' '}
+                  {detection.checklistMatchMessage}
+                </p>
               </li>
             ))}
           </ol>
