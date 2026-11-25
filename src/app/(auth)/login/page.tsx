@@ -3,11 +3,16 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { AuthShell } from '@/components/custom/auth-shell';
 import { SignInForm } from '@/components/custom/sign-in-form';
+import { publicSocialImage } from '@/lib/public-origin';
 import { safeReturnPath } from '@/lib/team-invite-url';
 
+const socialImage = publicSocialImage();
+
 export const metadata: Metadata = {
-  title: 'Sign in — DocketKite',
+  title: 'Sign in',
   description: 'Sign in to your private City of Tampa permit workspace.',
+  openGraph: { images: [socialImage] },
+  twitter: { card: 'summary_large_image', images: [socialImage.url] },
 };
 
 type LoginPageProps = {

@@ -3,21 +3,30 @@ import type { Metadata } from 'next';
 import { Reveal } from '@/components/custom/motion-kit/reveal';
 import { PricingTiers } from '@/components/custom/pricing-tiers';
 import { pricingContent, tierAmount } from '@/lib/pricing/content';
-import { siteName, siteUrl } from '@/lib/site';
+import { publicSocialImage, publicUrl } from '@/lib/public-origin';
+import { siteName } from '@/lib/site';
 import { PricingJsonLd } from '@/modules/pricing-page/pricing-jsonld';
 
 const pageDescription =
   'New DocketKite teams get a shared 30-day setup window with no automatic charge or paid conversion. Permit records and PDF downloads unlock only after the $299 per month team subscription is verified as active. Members can start an on-demand check of a linked public Accela record; a verified status transition can email the assigned project manager, and an interrupted check can email the team owner. Checks are not scheduled and do not access applicant-only information. SMS alerts are planned and unavailable today.';
 
+const canonical = publicUrl('/pricing');
+const socialImage = publicSocialImage(siteName);
+
 export const metadata: Metadata = {
   title: 'Pricing',
   description: pageDescription,
-  alternates: { canonical: '/pricing' },
+  alternates: { canonical },
   openGraph: {
     title: `Pricing · ${siteName}`,
     description: pageDescription,
-    url: '/pricing',
+    url: canonical,
     type: 'website',
+    images: [socialImage],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    images: [socialImage.url],
   },
 };
 
@@ -31,7 +40,7 @@ const offers = pricingContent.tiers.flatMap((tier) => {
       originalPrice: amount.originalAmount,
       ...(tier.billing === 'one-time' ? {} : { interval: pricingContent.defaultInterval }),
       description: tier.description,
-      url: `${siteUrl}/pricing#${encodeURIComponent(tier.id)}`,
+      url: `${publicUrl('/pricing')}#${encodeURIComponent(tier.id)}`,
     },
   ];
 });
@@ -43,7 +52,7 @@ export default function PricingPage() {
         name="DocketKite private team workspace"
         description={pageDescription}
         brand={siteName}
-        url={`${siteUrl}/pricing`}
+        url={publicUrl('/pricing')}
         currency={pricingContent.currency}
         offers={offers}
       />

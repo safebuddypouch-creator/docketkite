@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 import { PermitCorrectionReview } from '@/components/custom/permit-correction-review';
 
 export const metadata: Metadata = {
-  title: 'Review correction items — DocketKite',
+  title: 'Review correction items',
   description: 'Review proposed correction items from a permit letter before confirming them.',
 };
 

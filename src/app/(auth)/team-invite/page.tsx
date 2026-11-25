@@ -3,10 +3,15 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { AuthShell } from '@/components/custom/auth-shell';
 import { TeamInvitationAcceptance } from '@/components/custom/team-invitation-acceptance';
+import { publicSocialImage } from '@/lib/public-origin';
+
+const socialImage = publicSocialImage();
 
 export const metadata: Metadata = {
-  title: 'Team invitation — DocketKite',
+  title: 'Team invitation',
   description: 'Accept a private DocketKite team invitation as a project manager.',
+  openGraph: { images: [socialImage] },
+  twitter: { card: 'summary_large_image', images: [socialImage.url] },
 };
 
 export default function TeamInvitePage() {

@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 import { PermitDetails } from '@/components/custom/permit-details';
 
 export const metadata: Metadata = {
-  title: 'Permit details — DocketKite',
+  title: 'Permit details',
   description: 'View a permit in your private DocketKite team workspace.',
 };
 

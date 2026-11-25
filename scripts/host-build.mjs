@@ -44,6 +44,28 @@ if (!nextEnv.SKIP_ENV_VALIDATION) {
   nextEnv.SKIP_ENV_VALIDATION = '1';
 }
 
+// The published app is https://docketkite.apps.grok.bot. Cursor's build does not
+// set NEXT_PUBLIC_APP_URL, so sitemap, canonical, and social URLs fell back to
+// localhost. Keep a real configured origin. Do not replace a non-loopback URL.
+const publishedOrigin = 'https://docketkite.apps.grok.bot';
+function loopbackOrigin(value) {
+  if (!value?.trim()) return true;
+  try {
+    const url = new URL(value);
+    return url.hostname === 'localhost' || url.hostname === '127.0.0.1' || url.hostname === '::1';
+  } catch {
+    return true;
+  }
+}
+if (loopbackOrigin(nextEnv.NEXT_PUBLIC_APP_URL)) {
+  nextEnv.NEXT_PUBLIC_APP_URL = publishedOrigin;
+}
+// robots.txt and /llms.txt stay closed unless this is exactly "true".
+// An explicit "false" from the deploy is left alone.
+if (nextEnv.SEO_INDEXABLE !== 'true' && nextEnv.SEO_INDEXABLE !== 'false') {
+  nextEnv.SEO_INDEXABLE = 'true';
+}
+
 const built = run(
   process.execPath,
   [path.join(root, 'node_modules/next/dist/bin/next'), 'build'],

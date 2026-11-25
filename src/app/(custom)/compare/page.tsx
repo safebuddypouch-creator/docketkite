@@ -13,19 +13,29 @@ import {
   comparisonResearchNote,
   comparisonSources,
 } from '@/lib/comparison/content';
+import { publicSocialImage, publicUrl } from '@/lib/public-origin';
 import { siteName } from '@/lib/site';
 
+const description =
+  'See the official City of Tampa permit portal, what public records expose, and the limits of DocketKite’s on-demand checks.';
+const canonical = publicUrl('/compare');
+const socialImage = publicSocialImage(siteName);
+
 export const metadata: Metadata = {
-  title: `City of Tampa Permit Coverage — ${siteName}`,
-  description:
-    'See the official City of Tampa permit portal, what public records expose, and the limits of DocketKite’s on-demand checks.',
-  alternates: { canonical: '/compare' },
+  title: 'City of Tampa Permit Coverage',
+  description,
+  alternates: { canonical },
   openGraph: {
-    title: `City of Tampa Permit Coverage — ${siteName}`,
+    title: `City of Tampa Permit Coverage · ${siteName}`,
     description:
       'A sourced guide to City of Tampa public permits, record status fields, correction files, and on-demand team alerts.',
-    url: '/compare',
+    url: canonical,
     type: 'website',
+    images: [socialImage],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    images: [socialImage.url],
   },
 };
 

@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 import { TeamStatusMonitoring } from '@/components/custom/team-status-monitoring';
 
 export const metadata: Metadata = {
-  title: 'Team monitoring — DocketKite',
+  title: 'Team monitoring',
   description: 'Review recent public permit status changes detected across a DocketKite team.',
 };
 
