@@ -18,6 +18,7 @@ import { toast } from 'sonner';
 import { completionPercent } from '@/components/custom/completion-progress';
 import { CsvExporter } from '@/components/custom/csv-exporter';
 import { CsvImporter } from '@/components/custom/csv-importer';
+import { FloridaAccelaAgencyOptions } from '@/components/custom/florida-accela-agency-options';
 import { PermitLetterDraft } from '@/components/custom/permit-letter-draft';
 import { PermitPortalMonitor } from '@/components/custom/permit-portal-monitor';
 import { Badge } from '@/components/ui/badge';
@@ -163,6 +164,11 @@ function PermitEditor({
             mailing address alone does not establish jurisdiction. Checks are on demand, confirm the
             permit number, and do not access applicant-only details.
           </span>
+          <FloridaAccelaAgencyOptions
+            variant="compact"
+            id={`${portalUrlId}-jurisdiction`}
+            label="Open a supported county or city portal"
+          />
           {officialPortalUrl ? (
             <a
               className="w-fit text-sm font-medium text-primary underline underline-offset-4 hover:no-underline focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -170,7 +176,7 @@ function PermitEditor({
               target="_blank"
               rel="noreferrer"
             >
-              Open saved City portal link
+              Open saved Accela record link
             </a>
           ) : null}
         </label>

@@ -3,7 +3,7 @@
 
 export const siteName = 'DocketKite';
 export const siteDescription =
-  'City of Tampa permit checks for residential remodeling teams. DocketKite records publicly visible status from manually started Accela checks; background monitoring and SMS remain unavailable.';
+  'Florida Accela permit checks for residential remodeling teams. DocketKite records publicly visible status from manually started Accela checks across supported Florida counties and cities; background monitoring and SMS remain unavailable.';
 
 // PWA + social-share colors. HEX only (CSS variables aren't readable here) — set
 // them to match the theme you define in src/app/brand-theme.css. The starter

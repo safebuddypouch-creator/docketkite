@@ -1,9 +1,10 @@
-// @polsia:user-owned — sourced City of Tampa permit coverage page.
+// @polsia:user-owned — sourced Florida Accela permit coverage page.
 
 import { ArrowRight } from 'lucide-react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ComparisonTable } from '@/components/custom/comparison-table';
+import { FloridaAccelaAgencyOptions } from '@/components/custom/florida-accela-agency-options';
 import { Reveal } from '@/components/custom/motion-kit/reveal';
 import { Button } from '@/components/ui/button';
 import {
@@ -17,18 +18,18 @@ import { publicSocialImage, publicUrl } from '@/lib/public-origin';
 import { siteName } from '@/lib/site';
 
 const description =
-  'See the official City of Tampa permit portal, what public records expose, and the limits of DocketKite’s on-demand checks.';
+  'See supported Florida Accela Building portals, what public records expose, and the limits of DocketKite’s on-demand checks.';
 const canonical = publicUrl('/compare');
 const socialImage = publicSocialImage(siteName);
 
 export const metadata: Metadata = {
-  title: 'City of Tampa Permit Coverage',
+  title: 'Florida Accela Permit Coverage',
   description,
   alternates: { canonical },
   openGraph: {
-    title: `City of Tampa Permit Coverage · ${siteName}`,
+    title: `Florida Accela Permit Coverage · ${siteName}`,
     description:
-      'A sourced guide to City of Tampa public permits, record status fields, correction files, and on-demand team alerts.',
+      'A sourced guide to Florida Accela public permits, record status fields, correction files, and on-demand team alerts.',
     url: canonical,
     type: 'website',
     images: [socialImage],
@@ -48,7 +49,7 @@ export default function ComparePage() {
           <div className="dk-titleblock w-full">
             <span>Sheet 02</span>
             <span>Coverage</span>
-            <span>City of Tampa</span>
+            <span>Florida Accela</span>
             <span>Residential remodel permits</span>
           </div>
           <h1 className="max-w-3xl font-display text-5xl font-semibold uppercase leading-[0.92] tracking-wide sm:text-6xl lg:text-7xl">
@@ -57,6 +58,27 @@ export default function ComparePage() {
           <p className="max-w-3xl text-base leading-7 text-muted-foreground sm:text-lg sm:leading-8">
             {comparisonContent.intro}
           </p>
+        </Reveal>
+
+        <Reveal>
+          <section aria-labelledby="supported-portals-heading" className="grid gap-4">
+            <header className="grid max-w-3xl gap-2">
+              <p className="text-xs font-semibold uppercase tracking-[0.15em] text-primary">
+                Supported portals
+              </p>
+              <h2
+                id="supported-portals-heading"
+                className="font-display text-3xl font-semibold tracking-tight sm:text-4xl"
+              >
+                Choose a Florida Accela county or city
+              </h2>
+              <p className="text-sm leading-6 text-muted-foreground sm:text-base">
+                Every option opens the official Building CapHome for that Accela agency. Paste a
+                direct CapDetail record URL into DocketKite after you find the permit.
+              </p>
+            </header>
+            <FloridaAccelaAgencyOptions id="compare-florida-accela-jurisdiction" />
+          </section>
         </Reveal>
 
         <Reveal>
@@ -151,9 +173,9 @@ export default function ComparePage() {
             </div>
             <div className="grid gap-3 text-sm leading-6 text-muted-foreground sm:text-base">
               <p>
-                A paid team member can start a check against a saved Florida Accela Building
-                record link. DocketKite stores a raw Record Status only after the page confirms the
-                permit number. Verified status transitions can trigger project-manager email; an
+                A paid team member can start a check against a saved Florida Accela Building record
+                link. DocketKite stores a raw Record Status only after the page confirms the permit
+                number. Verified status transitions can trigger project-manager email; an
                 interrupted check can trigger team-owner email.
               </p>
               <p className="font-medium text-foreground">

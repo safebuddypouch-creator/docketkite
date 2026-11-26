@@ -5,6 +5,7 @@ import { ArrowLeft, ExternalLink } from 'lucide-react';
 import Link from 'next/link';
 import { type FormEvent, useEffect, useState } from 'react';
 import { toast } from 'sonner';
+import { FloridaAccelaAgencyOptions } from '@/components/custom/florida-accela-agency-options';
 import { PermitPortalMonitor } from '@/components/custom/permit-portal-monitor';
 import { PermitSummaryPdfDownload } from '@/components/custom/permit-summary-pdf-download';
 import { PermitTeamNotes } from '@/components/custom/permit-team-notes';
@@ -392,9 +393,14 @@ export function PermitDetails({ permitId }: { permitId: string }) {
                 required
               />
               <p id="permit-portal-url-help" className="text-xs leading-5 text-muted-foreground">
-                Use a direct HTTPS record detail URL from a supported official Florida Accela Building
-                portal. A mailing address alone does not establish City jurisdiction.
+                Use a direct HTTPS record detail URL from a supported official Florida Accela
+                Building portal. A mailing address alone does not establish City jurisdiction.
               </p>
+              <FloridaAccelaAgencyOptions
+                variant="compact"
+                id="permit-details-florida-accela-jurisdiction"
+                label="Open a supported county or city portal"
+              />
               {portalUrlError ? (
                 <p id="permit-portal-url-error" className="text-sm text-destructive" role="alert">
                   {portalUrlError}

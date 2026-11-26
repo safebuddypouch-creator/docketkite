@@ -45,3 +45,13 @@ export function getFloridaAccelaAgency(code: string): FloridaAccelaAgency | unde
   const normalized = normalizeAccelaAgencyCode(code);
   return FLORIDA_ACCELA_AGENCIES.find((agency) => agency.code === normalized);
 }
+
+/** Official Building CapHome for a curated Florida Accela agency. */
+export function floridaAccelaPortalHomeUrl(code: string): string {
+  return `https://aca-prod.accela.com/${normalizeAccelaAgencyCode(code)}/Cap/CapHome.aspx?TabName=Building&module=Building`;
+}
+
+/** Agencies sorted by display name for selects and coverage lists. */
+export function floridaAccelaAgenciesByName(): FloridaAccelaAgency[] {
+  return [...FLORIDA_ACCELA_AGENCIES].sort((a, b) => a.name.localeCompare(b.name));
+}

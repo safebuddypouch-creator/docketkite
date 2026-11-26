@@ -2,8 +2,8 @@
 import type { ComparisonContent } from '@/modules/comparison-page/types';
 
 export const comparisonContent: ComparisonContent = {
-  eyebrow: 'City of Tampa permit coverage · reviewed November 17, 2026',
-  title: 'The City record, and what DocketKite can read from it.',
+  eyebrow: 'Florida Accela permit coverage · reviewed November 25, 2026',
+  title: 'The Accela record, and what DocketKite can read from it.',
   intro:
     'DocketKite supports Florida Accela Building permit records through official Citizen Access portals, with City of Tampa as the documented sample. A Florida mailing address alone does not establish jurisdiction. This page distinguishes what a public portal exposed in a small anonymous sample from what the team workspace does today.',
   tableCaption: 'Florida Accela public permit records and DocketKite workflow',
