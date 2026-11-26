@@ -15,6 +15,7 @@ import {
 } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
+import { completionPercent } from '@/components/custom/completion-progress';
 import { CsvExporter } from '@/components/custom/csv-exporter';
 import { CsvImporter } from '@/components/custom/csv-importer';
 import { PermitLetterDraft } from '@/components/custom/permit-letter-draft';
@@ -695,15 +696,29 @@ function PermitCard({
                 {letter.correctionChecklist ? (
                   <Link
                     aria-label={`Open saved correction checklist for ${letter.fileName}: ${letter.correctionChecklist.completedCount} of ${letter.correctionChecklist.totalCount} items complete`}
-                    className="flex w-fit flex-wrap items-center gap-x-2 gap-y-1 rounded-md text-sm text-primary underline underline-offset-4 hover:no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    className="grid w-full max-w-sm gap-1.5 rounded-md text-sm text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     data-testid={`correction-checklist-summary-${letter.id}`}
                     href={`/dashboard/permits/${encodeURIComponent(letter.permitId)}/letters/${encodeURIComponent(letter.correctionChecklist.sourceLetterId)}/checklist`}
                   >
-                    <span className="font-medium">Correction checklist</span>
-                    <span className="text-muted-foreground">
-                      {letter.correctionChecklist.completedCount} of{' '}
-                      {letter.correctionChecklist.totalCount} complete
+                    <span className="flex flex-wrap items-center gap-x-2 gap-y-1 underline underline-offset-4 hover:no-underline">
+                      <span className="font-medium">Correction checklist</span>
+                      <span className="text-muted-foreground">
+                        {letter.correctionChecklist.completedCount} of{' '}
+                        {letter.correctionChecklist.totalCount} complete
+                        {letter.correctionChecklist.totalCount > 0 &&
+                        letter.correctionChecklist.completedCount ===
+                          letter.correctionChecklist.totalCount
+                          ? ' · All tasks done'
+                          : ''}
+                      </span>
                     </span>
+                    <Progress
+                      value={completionPercent(
+                        letter.correctionChecklist.completedCount,
+                        letter.correctionChecklist.totalCount,
+                      )}
+                      aria-hidden="true"
+                    />
                   </Link>
                 ) : (
                   <p
