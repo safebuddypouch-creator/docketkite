@@ -36,3 +36,12 @@ describe('example route handler branches', () => {
     expect(res.status).toBe(404);
   });
 });
+
+describe('example-secure route handler branches', () => {
+  it('GET/POST/PATCH are disabled for public launch', async () => {
+    const { GET, POST, PATCH } = await import('@/app/api/example-secure/route');
+    expect((await GET()).status).toBe(404);
+    expect((await POST()).status).toBe(404);
+    expect((await PATCH()).status).toBe(404);
+  });
+});

@@ -8,6 +8,8 @@ const mocks = vi.hoisted(() => ({
   eligible: vi.fn(),
   matches: vi.fn(),
   updateMany: vi.fn(),
+  isRateLimited: vi.fn(),
+  clientIp: vi.fn(),
 }));
 
 vi.mock('server-only', () => ({}));
@@ -17,6 +19,10 @@ vi.mock('@/lib/owner-access', () => ({
   ownerAccessCodeConfigured: mocks.configured,
   ownerAccessEligible: mocks.eligible,
   ownerAccessMatches: mocks.matches,
+}));
+vi.mock('@/lib/public-form-rate-limit', () => ({
+  isRateLimited: mocks.isRateLimited,
+  clientIp: mocks.clientIp,
 }));
 vi.mock('@/lib/db', () => ({
   prisma: { user: { updateMany: mocks.updateMany } },
@@ -48,6 +54,8 @@ describe('owner access route', () => {
     mocks.eligible.mockReturnValue(true);
     mocks.matches.mockReturnValue(true);
     mocks.updateMany.mockResolvedValue({ count: 1 });
+    mocks.isRateLimited.mockResolvedValue(false);
+    mocks.clientIp.mockReturnValue('203.0.113.10');
   });
 
   it('tells only the verified configured owner that the form applies', async () => {
@@ -88,6 +96,7 @@ describe('owner access route', () => {
       where: { id: 'owner-user', email: 'owner@example.test', emailVerified: true },
       data: { role: 'admin' },
     });
+    expect(mocks.isRateLimited).toHaveBeenCalledWith('owner-access:owner-user', 5, 15 * 60 * 1000);
   });
 
   it('does not grant admin when the email is not verified', async () => {
@@ -107,6 +116,14 @@ describe('owner access route', () => {
     mocks.matches.mockReturnValue(false);
     const response = await post('wrong-access-code');
     expect(response.status).toBe(403);
+    expect(mocks.updateMany).not.toHaveBeenCalled();
+  });
+
+  it('rejects when the shared rate limit is exhausted', async () => {
+    mocks.isRateLimited.mockResolvedValueOnce(true);
+    const response = await post('correct-horse-battery');
+    expect(response.status).toBe(429);
+    await expect(response.json()).resolves.toEqual({ error: 'owner_access_rate_limited' });
     expect(mocks.updateMany).not.toHaveBeenCalled();
   });
 });

@@ -9,6 +9,8 @@ const mocks = vi.hoisted(() => ({
   findPermitRecord: vi.fn(),
   renderDocumentPdf: vi.fn(),
   loadPdfFonts: vi.fn(),
+  isRateLimited: vi.fn(),
+  clientIp: vi.fn(),
 }));
 
 vi.mock('server-only', () => ({}));
@@ -17,6 +19,10 @@ vi.mock('@/lib/db', () => ({
 }));
 vi.mock('@/lib/require-auth', () => ({ requireAuth: mocks.requireAuth }));
 vi.mock('@/lib/team-access', () => ({ requireTeamAccess: mocks.requireTeamAccess }));
+vi.mock('@/lib/public-form-rate-limit', () => ({
+  isRateLimited: mocks.isRateLimited,
+  clientIp: mocks.clientIp,
+}));
 vi.mock('@/lib/pdf/client', () => ({
   renderDocumentPdf: mocks.renderDocumentPdf,
   PdfImageError: class PdfImageError extends Error {},
@@ -44,7 +50,13 @@ function context() {
 describe('paid permit summary PDF route', () => {
   beforeEach(() => {
     vi.resetAllMocks();
-    mocks.requireAuth.mockResolvedValue({ id: 'owner-1', email: 'owner@example.test' });
+    mocks.requireAuth.mockResolvedValue({
+      id: 'owner-1',
+      email: 'owner@example.test',
+      emailVerified: true,
+    });
+    mocks.isRateLimited.mockResolvedValue(false);
+    mocks.clientIp.mockReturnValue('203.0.113.10');
     mocks.requireTeamAccess.mockResolvedValue({
       response: null,
       membership: { role: 'owner' },
