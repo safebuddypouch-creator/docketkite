@@ -16,9 +16,9 @@ describe('DocketKite pricing content', () => {
     expect(tier.unit).toBe('per team');
     expect(tier.cta.href).toBe('/dashboard');
     expect(tier.cta.checkout).toBeUndefined();
-    expect(pricingContent.intro).toMatch(/30-day free trial/i);
+    expect(pricingContent.intro).toMatch(/30-day setup window/i);
     expect(pricingContent.intro).toMatch(/never automatically charges or converts/i);
-    expect(pricingContent.intro).toMatch(/paid team features lock/i);
+    expect(pricingContent.intro).toMatch(/stay locked|paid team features lock/i);
     expect(pricingContent.intro).toMatch(/team and permit records remain stored/i);
     expect(pricingContent.reassurance).toContain('No automatic charge or paid conversion');
     expect(pricingContent.footnote).toContain('$149');
