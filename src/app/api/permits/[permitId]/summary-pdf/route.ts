@@ -12,10 +12,15 @@ import {
 } from '@/lib/pdf/client';
 import { loadPdfFonts } from '@/lib/pdf/font-config';
 import { blockDocumentSpecSchema } from '@/lib/pdf/schema';
+import { clientIp, isRateLimited } from '@/lib/public-form-rate-limit';
 import { requireAuth, type SessionUser } from '@/lib/require-auth';
 import { requireTeamAccess } from '@/lib/team-access';
 
 export const dynamic = 'force-dynamic';
+
+const PDF_MAX_PER_USER = 20;
+const PDF_MAX_PER_IP = 40;
+const PDF_WINDOW_MS = 15 * 60 * 1000;
 
 function fileNameForPermit(permitNumber: string): string {
   const safeReference = permitNumber
@@ -57,6 +62,23 @@ export async function GET(request: Request, context: { params: Promise<{ permitI
     user = await requireAuth(request);
   } catch (response) {
     return response as Response;
+  }
+
+  if (!user.emailVerified) {
+    return NextResponse.json(
+      {
+        error: 'email_verification_required',
+        message: 'Verify your email before generating a PDF.',
+      },
+      { status: 403 },
+    );
+  }
+
+  if (
+    (await isRateLimited(`pdf:summary:${user.id}`, PDF_MAX_PER_USER, PDF_WINDOW_MS)) ||
+    (await isRateLimited(`pdf:summary:ip:${clientIp(request)}`, PDF_MAX_PER_IP, PDF_WINDOW_MS))
+  ) {
+    return NextResponse.json({ error: 'pdf_rate_limited' }, { status: 429 });
   }
 
   const { permitId } = await context.params;

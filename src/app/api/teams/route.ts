@@ -4,12 +4,21 @@ import { randomBytes } from 'node:crypto';
 import { NextResponse } from 'next/server';
 import { TeamCreateOrJoin, TeamList, TeamListItem } from '@/lib/contracts/team';
 import { prisma } from '@/lib/db';
+import { clientIp, isRateLimited } from '@/lib/public-form-rate-limit';
 import { requireAuth, type SessionUser } from '@/lib/require-auth';
 import { sameOrigin } from '@/lib/same-origin';
 import { getTeamAccessState } from '@/lib/team-access';
 import { createTeamTrialWindow } from '@/lib/team-entitlements';
 
 export const dynamic = 'force-dynamic';
+
+/** Join-code guessing budget — shared across instances via Postgres. */
+const TEAM_JOIN_MAX_PER_USER = 10;
+const TEAM_JOIN_MAX_PER_IP = 30;
+const TEAM_JOIN_WINDOW_MS = 15 * 60 * 1000;
+/** Team creation is cheaper to abuse; still cap per account. */
+const TEAM_CREATE_MAX_PER_USER = 5;
+const TEAM_CREATE_WINDOW_MS = 60 * 60 * 1000;
 
 export async function GET(request: Request) {
   let user: SessionUser;
@@ -58,10 +67,43 @@ export async function POST(request: Request) {
     return response as Response;
   }
 
+  // Signup opens a session before verification (framework auth). Gate joining /
+  // creating teams on a proven mailbox so unverified sessions cannot abuse join codes.
+  if (!user.emailVerified) {
+    return NextResponse.json(
+      {
+        error: 'email_verification_required',
+        message: 'Verify your email before creating or joining a team.',
+      },
+      { status: 403 },
+    );
+  }
+
   const body = await request.json().catch(() => null);
   const parsed = TeamCreateOrJoin.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json({ error: 'invalid_team_request' }, { status: 400 });
+  }
+
+  if (parsed.data.action === 'join') {
+    if (
+      (await isRateLimited(
+        `team-join:${user.id}`,
+        TEAM_JOIN_MAX_PER_USER,
+        TEAM_JOIN_WINDOW_MS,
+      )) ||
+      (await isRateLimited(
+        `team-join:ip:${clientIp(request)}`,
+        TEAM_JOIN_MAX_PER_IP,
+        TEAM_JOIN_WINDOW_MS,
+      ))
+    ) {
+      return NextResponse.json({ error: 'team_join_rate_limited' }, { status: 429 });
+    }
+  } else if (
+    await isRateLimited(`team-create:${user.id}`, TEAM_CREATE_MAX_PER_USER, TEAM_CREATE_WINDOW_MS)
+  ) {
+    return NextResponse.json({ error: 'team_create_rate_limited' }, { status: 429 });
   }
 
   try {

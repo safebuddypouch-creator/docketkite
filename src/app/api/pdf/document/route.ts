@@ -21,13 +21,17 @@ import {
 } from '@/lib/pdf/client';
 import { loadPdfFonts } from '@/lib/pdf/font-config';
 import { documentSpecSchema } from '@/lib/pdf/schema';
+import { clientIp, isRateLimited } from '@/lib/public-form-rate-limit';
 import { requireAuth } from '@/lib/require-auth';
 import { sameOrigin } from '@/lib/same-origin';
 
 export const dynamic = 'force-dynamic';
 
-/** Largest request body accepted, in bytes. */
-const MAX_BODY_BYTES = 25 * 1024 * 1024;
+/** Largest request body accepted, in bytes. Keep small — DocumentSpec is JSON text. */
+const MAX_BODY_BYTES = 1 * 1024 * 1024;
+const PDF_MAX_PER_USER = 10;
+const PDF_MAX_PER_IP = 20;
+const PDF_WINDOW_MS = 15 * 60 * 1000;
 const HTTP_BAD_REQUEST = 400;
 const HTTP_PAYLOAD_TOO_LARGE = 413;
 
@@ -69,10 +73,30 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'forbidden_origin' }, { status: 403 });
   }
 
+  let user: Awaited<ReturnType<typeof requireAuth>>;
   try {
-    await requireAuth(req);
+    user = await requireAuth(req);
   } catch (response) {
     return response as Response;
+  }
+
+  // Framework auth opens a session before mailbox proof; refuse unverified callers
+  // so anonymous signup sessions cannot burn PDF render CPU.
+  if (!user.emailVerified) {
+    return NextResponse.json(
+      {
+        error: 'email_verification_required',
+        message: 'Verify your email before generating a PDF.',
+      },
+      { status: 403 },
+    );
+  }
+
+  if (
+    (await isRateLimited(`pdf:document:${user.id}`, PDF_MAX_PER_USER, PDF_WINDOW_MS)) ||
+    (await isRateLimited(`pdf:document:ip:${clientIp(req)}`, PDF_MAX_PER_IP, PDF_WINDOW_MS))
+  ) {
+    return NextResponse.json({ error: 'pdf_rate_limited' }, { status: 429 });
   }
 
   const text = await readCappedBody(req);

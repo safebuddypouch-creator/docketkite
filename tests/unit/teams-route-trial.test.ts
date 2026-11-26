@@ -13,6 +13,8 @@ const mocks = vi.hoisted(() => ({
   upsertMembership: vi.fn(),
   findMembership: vi.fn(),
   updatePermits: vi.fn(),
+  isRateLimited: vi.fn(),
+  clientIp: vi.fn(),
 }));
 
 vi.mock('server-only', () => ({}));
@@ -31,6 +33,10 @@ vi.mock('@/lib/db', () => ({
 vi.mock('@/lib/require-auth', () => ({ requireAuth: mocks.requireAuth }));
 vi.mock('@/lib/same-origin', () => ({ sameOrigin: mocks.sameOrigin }));
 vi.mock('@/lib/team-access', () => ({ getTeamAccessState: mocks.getTeamAccessState }));
+vi.mock('@/lib/public-form-rate-limit', () => ({
+  isRateLimited: mocks.isRateLimited,
+  clientIp: mocks.clientIp,
+}));
 
 import { POST } from '@/app/api/teams/route';
 
@@ -57,8 +63,14 @@ function post(body: unknown) {
 describe('team trial persistence', () => {
   beforeEach(() => {
     vi.resetAllMocks();
-    mocks.requireAuth.mockResolvedValue({ id: 'owner-1', email: 'owner@example.test' });
+    mocks.requireAuth.mockResolvedValue({
+      id: 'owner-1',
+      email: 'owner@example.test',
+      emailVerified: true,
+    });
     mocks.sameOrigin.mockReturnValue(true);
+    mocks.isRateLimited.mockResolvedValue(false);
+    mocks.clientIp.mockReturnValue('203.0.113.10');
     mocks.transaction.mockImplementation(
       async (callback: (tx: TeamTransaction) => Promise<unknown>) => callback(transaction),
     );
@@ -154,5 +166,25 @@ describe('team trial persistence', () => {
       update: {},
     });
     expect(mocks.createTeam).not.toHaveBeenCalled();
+  });
+
+  it('rejects create/join when the email is not verified', async () => {
+    mocks.requireAuth.mockResolvedValue({
+      id: 'owner-1',
+      email: 'owner@example.test',
+      emailVerified: false,
+    });
+    const response = await POST(post({ action: 'create', name: 'Sample Remodelers' }));
+    expect(response.status).toBe(403);
+    await expect(response.json()).resolves.toMatchObject({ error: 'email_verification_required' });
+    expect(mocks.createTeam).not.toHaveBeenCalled();
+  });
+
+  it('rejects join when the shared rate limit is exhausted', async () => {
+    mocks.isRateLimited.mockResolvedValueOnce(true);
+    const response = await POST(post({ action: 'join', joinCode: 'ABCDEF1234' }));
+    expect(response.status).toBe(429);
+    await expect(response.json()).resolves.toEqual({ error: 'team_join_rate_limited' });
+    expect(mocks.upsertMembership).not.toHaveBeenCalled();
   });
 });
