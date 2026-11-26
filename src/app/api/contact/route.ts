@@ -35,8 +35,8 @@ export async function POST(req: Request) {
   }
 
   if (
-    isRateLimited(`contact:${clientIp(req)}`, CONTACT_MAX_PER_WINDOW, CONTACT_WINDOW_MS) ||
-    isRateLimited('contact:global', CONTACT_GLOBAL_MAX, CONTACT_GLOBAL_WINDOW_MS)
+    (await isRateLimited(`contact:${clientIp(req)}`, CONTACT_MAX_PER_WINDOW, CONTACT_WINDOW_MS)) ||
+    (await isRateLimited('contact:global', CONTACT_GLOBAL_MAX, CONTACT_GLOBAL_WINDOW_MS))
   ) {
     return NextResponse.json(
       { errors: { form: 'Too many messages. Please try again later.' } },

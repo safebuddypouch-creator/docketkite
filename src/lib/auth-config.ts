@@ -26,7 +26,9 @@
 
 import type { BetterAuthOptions } from 'better-auth';
 import { APIError } from 'better-auth/api';
+import { prisma } from '@/lib/db';
 import { deliverEmail } from '@/lib/email/deliver';
+import { env } from '@/lib/env';
 import { rewriteSignupValidationResponse } from '@/lib/signup-validation';
 
 const plainSignupErrors = {
@@ -105,6 +107,24 @@ export const authConfig: BetterAuthOptions = {
   plugins: [plainSignupErrors],
   emailAndPassword: {
     enabled: true,
+  },
+  databaseHooks: {
+    user: {
+      create: {
+        before: async (user) => {
+          // An unverified squat on the configured owner address blocks the real
+          // mailbox from signing up (unique email). Clear only unverified rows so
+          // a verified owner account is never removed.
+          const ownerEmail = env.POLSIA_OWNER_EMAIL?.trim().toLowerCase();
+          const signupEmail = user.email.trim().toLowerCase();
+          if (ownerEmail && signupEmail === ownerEmail) {
+            await prisma.user.deleteMany({
+              where: { email: ownerEmail, emailVerified: false },
+            });
+          }
+        },
+      },
+    },
   },
   emailVerification: {
     sendVerificationEmail: async ({ user, url }, request) => {

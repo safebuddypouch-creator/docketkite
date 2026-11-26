@@ -7,7 +7,7 @@ const mocks = vi.hoisted(() => ({
   configured: vi.fn(),
   eligible: vi.fn(),
   matches: vi.fn(),
-  updateUser: vi.fn(),
+  updateMany: vi.fn(),
 }));
 
 vi.mock('server-only', () => ({}));
@@ -19,7 +19,7 @@ vi.mock('@/lib/owner-access', () => ({
   ownerAccessMatches: mocks.matches,
 }));
 vi.mock('@/lib/db', () => ({
-  prisma: { user: { update: mocks.updateUser } },
+  prisma: { user: { updateMany: mocks.updateMany } },
 }));
 
 import { GET, POST } from '@/app/api/account/owner-access/route';
@@ -42,20 +42,38 @@ describe('owner access route', () => {
       id: 'owner-user',
       email: 'owner@example.test',
       role: 'user',
+      emailVerified: true,
     });
     mocks.configured.mockReturnValue(true);
     mocks.eligible.mockReturnValue(true);
     mocks.matches.mockReturnValue(true);
-    mocks.updateUser.mockResolvedValue({ id: 'owner-user', role: 'admin' });
+    mocks.updateMany.mockResolvedValue({ count: 1 });
   });
 
-  it('tells only the configured owner that the form applies', async () => {
+  it('tells only the verified configured owner that the form applies', async () => {
     const response = await GET(
       new Request('https://docketkite.apps.grok.bot/api/account/owner-access'),
     );
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({ eligible: true });
 
+    mocks.requireAuth.mockResolvedValue({
+      id: 'owner-user',
+      email: 'owner@example.test',
+      role: 'user',
+      emailVerified: false,
+    });
+    const unverified = await GET(
+      new Request('https://docketkite.apps.grok.bot/api/account/owner-access'),
+    );
+    await expect(unverified.json()).resolves.toEqual({ eligible: false });
+
+    mocks.requireAuth.mockResolvedValue({
+      id: 'owner-user',
+      email: 'owner@example.test',
+      role: 'user',
+      emailVerified: true,
+    });
     mocks.eligible.mockReturnValue(false);
     const invited = await GET(
       new Request('https://docketkite.apps.grok.bot/api/account/owner-access'),
@@ -63,19 +81,32 @@ describe('owner access route', () => {
     await expect(invited.json()).resolves.toEqual({ eligible: false });
   });
 
-  it('grants admin when the code matches the signed-in owner', async () => {
+  it('grants admin when the verified owner presents the matching code', async () => {
     const response = await post('correct-horse-battery');
     expect(response.status).toBe(200);
-    expect(mocks.updateUser).toHaveBeenCalledWith({
-      where: { id: 'owner-user' },
+    expect(mocks.updateMany).toHaveBeenCalledWith({
+      where: { id: 'owner-user', email: 'owner@example.test', emailVerified: true },
       data: { role: 'admin' },
     });
+  });
+
+  it('does not grant admin when the email is not verified', async () => {
+    mocks.requireAuth.mockResolvedValue({
+      id: 'owner-user',
+      email: 'owner@example.test',
+      role: 'user',
+      emailVerified: false,
+    });
+    const response = await post('correct-horse-battery');
+    expect(response.status).toBe(403);
+    await expect(response.json()).resolves.toEqual({ error: 'owner_access_email_unverified' });
+    expect(mocks.updateMany).not.toHaveBeenCalled();
   });
 
   it('does not grant admin when the code does not match', async () => {
     mocks.matches.mockReturnValue(false);
     const response = await post('wrong-access-code');
     expect(response.status).toBe(403);
-    expect(mocks.updateUser).not.toHaveBeenCalled();
+    expect(mocks.updateMany).not.toHaveBeenCalled();
   });
 });

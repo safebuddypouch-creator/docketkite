@@ -40,7 +40,7 @@ describe('public contact route', () => {
     vi.clearAllMocks();
     mocks.create.mockResolvedValue({ id: 'message-1' });
     mocks.recordSubmission.mockResolvedValue({ recorded: true });
-    mocks.isRateLimited.mockReturnValue(false);
+    mocks.isRateLimited.mockResolvedValue(false);
   });
 
   it('saves the message and does not email a personal inbox', async () => {
@@ -60,7 +60,7 @@ describe('public contact route', () => {
   });
 
   it('rejects a flood with 429 before writing', async () => {
-    mocks.isRateLimited.mockReturnValue(true);
+    mocks.isRateLimited.mockResolvedValue(true);
 
     const response = await POST(request());
 
