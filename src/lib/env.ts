@@ -54,6 +54,12 @@ export const env = createEnv({
     // @polsia:contrib file-upload end
     // @polsia:contrib doc-parse start
     // @polsia:contrib doc-parse end
+    // App-owned: prefer a local OpenAI-compatible extract endpoint (e.g. Ollama).
+    // Example: LETTER_EXTRACT_BASE_URL=http://127.0.0.1:11434/v1
+    //          LETTER_EXTRACT_MODEL=llama3.1
+    LETTER_EXTRACT_BASE_URL: z.string().url().optional(),
+    LETTER_EXTRACT_MODEL: z.string().min(1).optional(),
+    LETTER_EXTRACT_API_KEY: z.string().min(1).optional(),
     // @polsia:contrib web-search start
     // @polsia:contrib web-search end
     // @polsia:slot env_vars_server end
@@ -107,6 +113,9 @@ export const env = createEnv({
     // @polsia:contrib file-upload end
     // @polsia:contrib doc-parse start
     // @polsia:contrib doc-parse end
+    LETTER_EXTRACT_BASE_URL: process.env.LETTER_EXTRACT_BASE_URL,
+    LETTER_EXTRACT_MODEL: process.env.LETTER_EXTRACT_MODEL,
+    LETTER_EXTRACT_API_KEY: process.env.LETTER_EXTRACT_API_KEY,
     // @polsia:contrib web-search start
     // @polsia:contrib web-search end
     // @polsia:slot env_runtime end
