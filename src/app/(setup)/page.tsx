@@ -249,7 +249,7 @@ export default function HomePage() {
                 <span className={styles.timelineDotAlert}>!</span>
                 <div>
                   <strong>A city update posts</strong>
-                  <small>Raw Record Status from the City page</small>
+                  <small>Raw Record Status from the Accela page</small>
                 </div>
                 <span className={styles.timelineStateMuted}>EASY TO MISS</span>
               </div>
@@ -380,7 +380,7 @@ export default function HomePage() {
           </h2>
           <p>
             DocketKite is for permit monitoring and coordination. It does not prepare, submit, or
-            file permits with the City.
+            file permits with the city or county.
           </p>
         </div>
         <div className={styles.boundarySide}>

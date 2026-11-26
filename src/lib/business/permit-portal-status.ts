@@ -1,4 +1,4 @@
-// @polsia:user-owned — exact public City of Tampa permit status extraction.
+// @polsia:user-owned — exact public Florida Accela permit status extraction.
 import { portalStatusesEquivalent } from '@/lib/business/permit-status-detections';
 
 export type PermitPortalExtraction =

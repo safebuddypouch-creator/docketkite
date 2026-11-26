@@ -136,7 +136,7 @@ async function findExistingKeys(
 export const csvImportTargets = [
   defineCsvTarget<PermitImportRow>({
     id: 'tampa-city-permits',
-    label: 'City of Tampa permits',
+    label: 'State of Florida Accela permits',
     fields,
     parseRow: parsePermitImportRow,
     keyOf: permitImportKey,

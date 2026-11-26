@@ -147,7 +147,7 @@ test('a team owner can add, change, clear, and reopen a permit portal link', asy
   });
   await expect(portalLink).toHaveAttribute('href', firstUrl);
   await expect(portalLink).toHaveAttribute('target', '_blank');
-  await expect(permitCard.getByText('Tampa public record link. Applicant-only information is not accessed.'))
+  await expect(permitCard.getByText('Florida Accela public record link. Applicant-only information is not accessed.'))
     .toBeVisible();
   expect((await prisma.permit.findUnique({ where: { id: permit.id } }))?.portalUrl).toBe(firstUrl);
   const savedToast = page.getByText('Permit details saved.');

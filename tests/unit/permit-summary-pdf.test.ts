@@ -20,7 +20,7 @@ function check(overrides: Partial<PermitSummaryPdfCheck> = {}): PermitSummaryPdf
   };
 }
 
-describe('Tampa permit summary PDF content', () => {
+describe('Florida Accela permit summary PDF content', () => {
   it('uses the newest eligible successful check and omits private notes', () => {
     const older = check({ id: 'old', status: 'Submitted', checkedAt: new Date('2026-11-10T09:00:00Z') });
     const newestSuccess = check({

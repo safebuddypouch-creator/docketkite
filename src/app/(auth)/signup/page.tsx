@@ -34,7 +34,7 @@ export default async function SignupPage({ searchParams }: SignupPageProps) {
 
   return (
     <AuthShell
-      eyebrow="City of Tampa permit desk"
+      eyebrow="State of Florida permit desk"
       title="Start with one job."
       description="Create your account and team, then choose whether to open the $299/month hosted checkout. The shared 30-day setup window does not unlock permit records or PDF downloads, never automatically charges or converts, and its UTC end time appears in your workspace. Your team and records remain stored if you do not subscribe."
       footer={

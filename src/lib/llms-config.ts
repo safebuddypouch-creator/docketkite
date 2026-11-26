@@ -36,13 +36,13 @@ export const llmsConfig: LlmsConfig = {
   intro:
     'DocketKite is for residential remodeling teams checking Florida Accela Building permits. A team member starts each check of a linked public Accela record from a supported Florida agency. DocketKite stores that publicly visible record status. Checks are not scheduled, do not read applicant-only files, and do not send SMS. Background monitoring is unavailable.',
   pageDescriptions: {
-    '/': 'Overview of on-demand City of Tampa permit checks for remodeling teams.',
+    '/': 'Overview of on-demand State of Florida Accela permit checks for remodeling teams.',
     '/pricing':
       'Shared 30-day setup window and the $299 per month team subscription. Permit records and PDF downloads require a verified active subscription.',
     '/compare':
-      'What the City of Tampa public portal shows, and what an on-demand DocketKite check can read from it.',
+      'What Florida Accela public portals show, and what an on-demand DocketKite check can read from them.',
     '/contact':
-      'Contact form for questions about City of Tampa permit checks and the team workflow.',
+      'Contact form for questions about State of Florida Accela permit checks and the team workflow.',
     '/faq':
       'Answers about saved permit status, the latest saved monitoring outcome, and assigning a project manager on the same team.',
   },

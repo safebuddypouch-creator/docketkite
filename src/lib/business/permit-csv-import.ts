@@ -1,4 +1,4 @@
-// @polsia:user-owned — City of Tampa permit CSV row validation and identity keys.
+// @polsia:user-owned — State of Florida Accela permit CSV row validation and identity keys.
 import {
   PermitFields,
   PermitPortalUrlRequired,

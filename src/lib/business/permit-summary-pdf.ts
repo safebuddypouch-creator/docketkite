@@ -1,4 +1,4 @@
-// @polsia:user-owned — public-record fields for a saved Tampa permit snapshot.
+// @polsia:user-owned — public-record fields for a saved Florida Accela permit snapshot.
 import { getOfficialPermitPortalUrl } from '@/lib/contracts/permit';
 import type { BlockDocumentSpec } from '@/lib/pdf/schema';
 
@@ -61,7 +61,7 @@ export function buildPermitSummaryPdf(record: PermitSummaryPdfRecord): PermitSum
     return {
       available: false,
       error: 'permit_reference_required',
-      message: 'Add the Tampa permit reference before downloading its summary.',
+      message: 'Add the Florida Accela permit reference before downloading its summary.',
     };
   }
 
@@ -80,8 +80,8 @@ export function buildPermitSummaryPdf(record: PermitSummaryPdfRecord): PermitSum
 
   const spec: BlockDocumentSpec = {
     metadata: {
-      title: `City of Tampa Permit Summary — ${permitNumber}`,
-      subject: 'Saved Tampa permit public-record snapshot',
+      title: `State of Florida Permit Summary — ${permitNumber}`,
+      subject: 'Saved Florida Accela permit public-record snapshot',
     },
     page: { margins: { top: 48, right: 48, bottom: 48, left: 48 } },
     defaultTextStyle: { fontSize: 10, lineHeight: 1.4, color: '#25282C' },
@@ -90,7 +90,7 @@ export function buildPermitSummaryPdf(record: PermitSummaryPdfRecord): PermitSum
       keyValue: { labelColor: '#5E6268', spaceAfter: 18 },
     },
     blocks: [
-      { type: 'heading', level: 1, text: 'City of Tampa Permit Summary' },
+      { type: 'heading', level: 1, text: 'State of Florida Permit Summary' },
       {
         type: 'text',
         text: 'Saved public-record snapshot · Not a permit filing',

@@ -29,17 +29,17 @@ export function AuthShell({
         </Link>
         <div className="relative mt-10 max-w-lg lg:mb-14">
           <p className="font-display text-sm font-semibold uppercase tracking-[0.18em] text-[#f0c14b]">
-            City of Tampa permit desk
+            State of Florida permit desk
           </p>
           <h1 className="mt-4 max-w-md font-display text-4xl font-semibold uppercase leading-[0.92] tracking-wide text-[#f7f3ea] sm:text-5xl lg:text-6xl">
             Keep every permit detail within reach.
           </h1>
           <p className="mt-4 max-w-md text-sm leading-6 text-[#d9cfc0] sm:text-base sm:leading-7">
-            A private workspace for your team&apos;s City of Tampa permit records.
+            A private workspace for your team&apos;s State of Florida Accela permit records.
           </p>
         </div>
         <p className="relative hidden font-display text-sm uppercase tracking-[0.14em] text-[#f0c14b] lg:block">
-          Private permit workspace · City of Tampa, Florida
+          Private permit workspace · State of Florida
         </p>
       </aside>
       <section className="dk-yard flex items-center justify-center px-5 py-10 sm:px-8 sm:py-14">
