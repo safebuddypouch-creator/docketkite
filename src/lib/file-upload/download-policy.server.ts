@@ -8,8 +8,8 @@ import { DownloadAuthorization } from '@/modules/file-upload/proxy';
  * `key`. Called first by GET /api/files/<key> (what `fileUrl(key)` renders);
  * anything but `Allow` answers 404, like an unknown file.
  *
- * The company API key only identifies the app, so this default denies every
- * download. Rename `_request`/`_key` and check that the file row belongs to
+ * This default denies every download. Permit letters are stored in Postgres
+ * and served by their own team-scoped routes. Rename `_request`/`_key` and check that the file row belongs to
  * the session user, e.g. with better-auth and a `Document` model holding the key
  * (import { auth } from '@/lib/auth'; import { prisma } from '@/lib/db'):
  *

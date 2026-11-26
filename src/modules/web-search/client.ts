@@ -1,8 +1,8 @@
 // @polsia:framework-owned - DO NOT EDIT. Code installed by polsia/modules/web-search@0.2.0. Drift = commit rejected.
 //
-// Server-side Polsia web-search helpers. No provider SDK, no provider key in
-// the app: `search` and `fetchPage` go through the Polsia web proxy with the
-// company API key. This file stays free of `server-only` so unit tests can
+// Installed web-search helper. DocketKite permit checks do not call it and
+// do not read a Polsia API key; City pages are fetched directly from Accela.
+// This file stays free of `server-only` so unit tests can
 // import it (vitest runs under jsdom); `search` and `fetchPage` refuse to run
 // in a browser instead. `runBatch` and `hostMatches` are pure. Full guide in
 // AGENT.md.
@@ -146,8 +146,8 @@ function polsiaApiBaseUrl() {
   return env.POLSIA_API_BASE_URL.replace(/\/+$/, '');
 }
 
-// Business errors are `{ ok: false, error: "<code>" }`; the frozen company-token
-// auth contract (401) is `{ error: { message, type, code } }`.
+// Business errors are `{ ok: false, error: "<code>" }`; a 401 body is
+// `{ error: { message, type, code } }`.
 function errorCodeOf(body: unknown): string {
   if (!body || typeof body !== 'object' || !('error' in body)) {
     return '';
@@ -254,7 +254,7 @@ async function polsiaPost(path: string, body: Record<string, unknown>): Promise<
   return responseBody;
 }
 
-/** `search` and `fetchPage` spend the company key: never from a browser. */
+/** `search` and `fetchPage` run on the server only. */
 function assertServer() {
   if (typeof window !== 'undefined') {
     throw new Error(

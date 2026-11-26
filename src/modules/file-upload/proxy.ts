@@ -235,8 +235,8 @@ export async function readUploadBody<T>(
 }
 
 /**
- * Storage mint, confirm, and multipart relay need a platform credential this app
- * does not use. Callers get the same not-configured response as a missing base URL.
+ * Permit letters are stored in Postgres. This app does not call Polsia storage
+ * and does not read a Polsia API key. Callers get a not-configured response.
  */
 async function relay(
   _path: string,
@@ -292,7 +292,7 @@ export function downloadOptionsOf(request: Request): SignOptions {
 }
 
 /**
- * Signed links need a platform credential this app does not use.
+ * Signed links are unused. This app does not read a Polsia API key.
  * Null for every key, including an unknown one.
  */
 export function signedUrlOf(_key: string, _options: SignOptions): Promise<string | null> {
