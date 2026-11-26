@@ -1,6 +1,23 @@
-// @polsia:user-owned — Postgres-backed throttle for public contact/waitlist POSTs.
+// @polsia:user-owned — Postgres throttle shared by every instance.
 import 'server-only';
 import { prisma } from '@/lib/db';
+
+export type RateLimitBucketState = { count: number; resetAt: number };
+
+/**
+ * Fixed window starting on the first hit. A later hit increments until `resetAt`.
+ * The SQL upsert in `isRateLimited` implements this same transition atomically.
+ */
+export function nextRateLimitBucket(
+  current: RateLimitBucketState | null,
+  now: number,
+  windowMs: number,
+): RateLimitBucketState {
+  if (!current || current.resetAt <= now) {
+    return { count: 1, resetAt: now + windowMs };
+  }
+  return { count: current.count + 1, resetAt: current.resetAt };
+}
 
 /**
  * Client IP for rate limiting. Prefers the first X-Forwarded-For hop (platform
@@ -19,9 +36,8 @@ export function clientIp(request: Request): string {
 
 /**
  * Returns true when this key has already used `max` hits inside `windowMs`.
- * Counters live in Postgres so every instance shares the same budget.
- * On DB failure, fail closed (treat as limited) so public forms cannot burn
- * email/API quota while the limiter is down.
+ * The current call counts toward the window. Counters live in Postgres.
+ * A failed write fails closed so a down database cannot open the forms.
  */
 export async function isRateLimited(
   key: string,
@@ -29,39 +45,40 @@ export async function isRateLimited(
   windowMs: number,
   now = Date.now(),
 ): Promise<boolean> {
-  const safeKey = key.slice(0, 190);
-  const windowStart = new Date(now);
+  const safeKey = key.slice(0, 200);
+  const nowDate = new Date(now);
+  const resetAt = new Date(now + windowMs);
 
   try {
-    return await prisma.$transaction(async (tx) => {
-      const existing = await tx.publicFormRateLimit.findUnique({ where: { key: safeKey } });
-      if (!existing || existing.windowStart.getTime() + windowMs <= now) {
-        await tx.publicFormRateLimit.upsert({
-          where: { key: safeKey },
-          create: { key: safeKey, count: 1, windowStart },
-          update: { count: 1, windowStart },
-        });
-        return false;
-      }
-      if (existing.count >= max) {
-        return true;
-      }
-      const updated = await tx.publicFormRateLimit.update({
-        where: { key: safeKey },
-        data: { count: { increment: 1 } },
-      });
-      return updated.count > max;
-    });
+    // Parameter order is part of the unit-test fake: key, resetAt, now, now, resetAt.
+    const rows = await prisma.$queryRaw<Array<{ count: number }>>`
+      INSERT INTO "rate_limit_bucket" ("key", "count", "resetAt")
+      VALUES (${safeKey}, 1, ${resetAt})
+      ON CONFLICT ("key") DO UPDATE
+      SET
+        "count" = CASE
+          WHEN "rate_limit_bucket"."resetAt" <= ${nowDate} THEN 1
+          ELSE "rate_limit_bucket"."count" + 1
+        END,
+        "resetAt" = CASE
+          WHEN "rate_limit_bucket"."resetAt" <= ${nowDate} THEN ${resetAt}
+          ELSE "rate_limit_bucket"."resetAt"
+        END
+      RETURNING "count"
+    `;
+    const count = Number(rows[0]?.count);
+    if (!Number.isFinite(count) || count < 1) return true;
+    return count > max;
   } catch {
     return true;
   }
 }
 
-/** Test helper — clears all buckets when a DB is available. */
+/** Clears buckets when a database is available. */
 export async function resetPublicFormRateLimits() {
   try {
-    await prisma.publicFormRateLimit.deleteMany();
+    await prisma.$executeRaw`DELETE FROM "rate_limit_bucket"`;
   } catch {
-    // Unit tests without a DB ignore this.
+    // Unit tests without a database ignore this.
   }
 }

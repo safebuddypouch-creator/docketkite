@@ -1,0 +1,10 @@
+// @polsia:user-owned — shared counters for public forms and owner-access attempts.
+// Datasource + generator live in prisma/schema/_base.prisma. Do not redeclare them.
+
+model RateLimitBucket {
+  key     String   @id @db.VarChar(200)
+  count   Int
+  resetAt DateTime
+
+  @@map("rate_limit_bucket")
+}

@@ -12,6 +12,7 @@ export function OwnerAccessCode() {
   const isAdmin = useIsAdmin();
   const { data: session } = useSession();
   const [eligible, setEligible] = useState(false);
+  const [needsVerification, setNeedsVerification] = useState(false);
   const [checking, setChecking] = useState(true);
   const [code, setCode] = useState('');
   const [pending, setPending] = useState(false);
@@ -23,6 +24,7 @@ export function OwnerAccessCode() {
     let mounted = true;
     if (isAdmin || !user) {
       setEligible(false);
+      setNeedsVerification(false);
       setChecking(false);
       return;
     }
@@ -30,10 +32,14 @@ export function OwnerAccessCode() {
     setChecking(true);
     void apiFetch('/api/account/owner-access', { schema: OwnerAccessEligibility })
       .then((result) => {
-        if (mounted) setEligible(result.eligible);
+        if (!mounted) return;
+        setEligible(result.eligible);
+        setNeedsVerification(result.needsVerification);
       })
       .catch(() => {
-        if (mounted) setEligible(false);
+        if (!mounted) return;
+        setEligible(false);
+        setNeedsVerification(false);
       })
       .finally(() => {
         if (mounted) setChecking(false);
@@ -44,7 +50,23 @@ export function OwnerAccessCode() {
     };
   }, [isAdmin, user]);
 
-  if (isAdmin || checking || !eligible) return null;
+  if (isAdmin || checking) return null;
+
+  if (needsVerification) {
+    return (
+      <Card className="mb-6">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Owner access</CardTitle>
+          <CardDescription>
+            Verify your email before using the owner access code. Open the link we sent, then come
+            back to this page.
+          </CardDescription>
+        </CardHeader>
+      </Card>
+    );
+  }
+
+  if (!eligible) return null;
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -58,12 +80,22 @@ export function OwnerAccessCode() {
       window.location.reload();
     } catch (caught) {
       const status = caught instanceof Error ? caught.message : '';
+      const codeName =
+        caught instanceof Error &&
+        caught.cause &&
+        typeof caught.cause === 'object' &&
+        'error' in caught.cause &&
+        typeof caught.cause.error === 'string'
+          ? caught.cause.error
+          : '';
       setError(
-        status.includes('(429)')
+        status.includes('(429)') || codeName === 'owner_access_rate_limited'
           ? 'Too many attempts. Wait a few minutes and try again.'
-          : status.includes('(503)')
+          : status.includes('(503)') || codeName === 'owner_access_unconfigured'
             ? 'Owner access is not ready yet. Save the access code, then try again after the site updates.'
-            : 'That code does not match this account.',
+            : codeName === 'owner_access_email_unverified'
+              ? 'Verify your email before using the owner access code.'
+              : 'That code does not match this account.',
       );
       setPending(false);
     }

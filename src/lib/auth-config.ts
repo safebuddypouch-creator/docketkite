@@ -24,11 +24,9 @@
 //     await prisma.userProfile.create({ data: { userId: user.id } }).catch(() => {});
 //   } } } },
 
-import type { BetterAuthOptions } from 'better-auth';
-import { APIError } from 'better-auth/api';
-import { prisma } from '@/lib/db';
+import type { BetterAuthOptions, BetterAuthPlugin } from 'better-auth';
+import { APIError, createAuthMiddleware } from 'better-auth/api';
 import { deliverEmail } from '@/lib/email/deliver';
-import { env } from '@/lib/env';
 import { rewriteSignupValidationResponse } from '@/lib/signup-validation';
 
 const plainSignupErrors = {
@@ -103,28 +101,60 @@ function publicVerificationUrl(url: string, request?: Request): string {
   return parsed.toString();
 }
 
+function emailFromUnknown(body: unknown): string | null {
+  if (!body || typeof body !== 'object' || !('email' in body)) return null;
+  const email = (body as { email: unknown }).email;
+  return typeof email === 'string' ? email : null;
+}
+
+/** Read the signup address without consuming the original request body. */
+export async function readSignupEmail(ctx: {
+  request?: Request;
+  body?: unknown;
+}): Promise<string | null> {
+  if (ctx.request) {
+    try {
+      const email = emailFromUnknown(await ctx.request.clone().json());
+      if (email) return email;
+    } catch {
+      // The stream may already be parsed. Fall through to that body.
+    }
+  }
+  return emailFromUnknown(ctx.body);
+}
+
+/**
+ * Runs before better-auth's duplicate-email check. A databaseHook is too late:
+ * user.create never runs when the address is already taken.
+ */
+export async function releaseUnverifiedOwnerBeforeSignup(ctx: {
+  request?: Request;
+  body?: unknown;
+}): Promise<void> {
+  const email = await readSignupEmail(ctx);
+  if (!email) return;
+  const { releaseUnverifiedOwnerMailbox } = await import('@/lib/owner-mailbox-release');
+  await releaseUnverifiedOwnerMailbox(email);
+}
+
+const releaseUnverifiedOwnerMailbox: BetterAuthPlugin = {
+  id: 'docketkite-release-unverified-owner-mailbox',
+  hooks: {
+    before: [
+      {
+        matcher: (context) => context.path === '/sign-up/email',
+        handler: createAuthMiddleware(async (ctx) => {
+          await releaseUnverifiedOwnerBeforeSignup(ctx);
+        }),
+      },
+    ],
+  },
+};
+
 export const authConfig: BetterAuthOptions = {
-  plugins: [plainSignupErrors],
+  plugins: [plainSignupErrors, releaseUnverifiedOwnerMailbox],
   emailAndPassword: {
     enabled: true,
-  },
-  databaseHooks: {
-    user: {
-      create: {
-        before: async (user) => {
-          // An unverified squat on the configured owner address blocks the real
-          // mailbox from signing up (unique email). Clear only unverified rows so
-          // a verified owner account is never removed.
-          const ownerEmail = env.POLSIA_OWNER_EMAIL?.trim().toLowerCase();
-          const signupEmail = user.email.trim().toLowerCase();
-          if (ownerEmail && signupEmail === ownerEmail) {
-            await prisma.user.deleteMany({
-              where: { email: ownerEmail, emailVerified: false },
-            });
-          }
-        },
-      },
-    },
   },
   emailVerification: {
     sendVerificationEmail: async ({ user, url }, request) => {

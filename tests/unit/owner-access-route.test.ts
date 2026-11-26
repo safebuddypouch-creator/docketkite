@@ -7,7 +7,9 @@ const mocks = vi.hoisted(() => ({
   configured: vi.fn(),
   eligible: vi.fn(),
   matches: vi.fn(),
+  findUnique: vi.fn(),
   updateMany: vi.fn(),
+  isRateLimited: vi.fn(),
 }));
 
 vi.mock('server-only', () => ({}));
@@ -18,11 +20,21 @@ vi.mock('@/lib/owner-access', () => ({
   ownerAccessEligible: mocks.eligible,
   ownerAccessMatches: mocks.matches,
 }));
+vi.mock('@/lib/public-form-rate-limit', () => ({
+  isRateLimited: mocks.isRateLimited,
+}));
 vi.mock('@/lib/db', () => ({
-  prisma: { user: { updateMany: mocks.updateMany } },
+  prisma: { user: { findUnique: mocks.findUnique, updateMany: mocks.updateMany } },
 }));
 
 import { GET, POST } from '@/app/api/account/owner-access/route';
+
+const storedOwner = {
+  id: 'owner-user',
+  email: 'owner@example.test',
+  emailVerified: true,
+  role: 'user',
+};
 
 function post(code: string) {
   return POST(
@@ -40,73 +52,102 @@ describe('owner access route', () => {
     mocks.sameOrigin.mockReturnValue(true);
     mocks.requireAuth.mockResolvedValue({
       id: 'owner-user',
-      email: 'owner@example.test',
-      role: 'user',
-      emailVerified: true,
+      email: 'session-can-be-stale@example.test',
+      role: 'admin',
+      emailVerified: false,
     });
     mocks.configured.mockReturnValue(true);
-    mocks.eligible.mockReturnValue(true);
+    mocks.eligible.mockImplementation((email: string) => email === 'owner@example.test');
     mocks.matches.mockReturnValue(true);
+    mocks.findUnique.mockResolvedValue(storedOwner);
     mocks.updateMany.mockResolvedValue({ count: 1 });
+    mocks.isRateLimited.mockResolvedValue(false);
   });
 
-  it('tells only the verified configured owner that the form applies', async () => {
+  it('tells only a verified non-admin owner that the form applies', async () => {
     const response = await GET(
       new Request('https://docketkite.apps.grok.bot/api/account/owner-access'),
     );
     expect(response.status).toBe(200);
-    await expect(response.json()).resolves.toEqual({ eligible: true });
-
-    mocks.requireAuth.mockResolvedValue({
-      id: 'owner-user',
-      email: 'owner@example.test',
-      role: 'user',
-      emailVerified: false,
+    await expect(response.json()).resolves.toEqual({
+      eligible: true,
+      needsVerification: false,
     });
-    const unverified = await GET(
+
+    mocks.findUnique.mockResolvedValue({ ...storedOwner, role: 'admin' });
+    const alreadyAdmin = await GET(
       new Request('https://docketkite.apps.grok.bot/api/account/owner-access'),
     );
-    await expect(unverified.json()).resolves.toEqual({ eligible: false });
-
-    mocks.requireAuth.mockResolvedValue({
-      id: 'owner-user',
-      email: 'owner@example.test',
-      role: 'user',
-      emailVerified: true,
+    await expect(alreadyAdmin.json()).resolves.toEqual({
+      eligible: false,
+      needsVerification: false,
     });
-    mocks.eligible.mockReturnValue(false);
+
+    mocks.findUnique.mockResolvedValue({ ...storedOwner, email: 'teammate@example.test' });
     const invited = await GET(
       new Request('https://docketkite.apps.grok.bot/api/account/owner-access'),
     );
-    await expect(invited.json()).resolves.toEqual({ eligible: false });
+    const body = await invited.json();
+    expect(body).toEqual({ eligible: false, needsVerification: false });
+    expect(body).not.toHaveProperty('email');
   });
 
-  it('grants admin when the verified owner presents the matching code', async () => {
+  it('asks the unverified owner to verify and hides the code form', async () => {
+    mocks.findUnique.mockResolvedValue({ ...storedOwner, emailVerified: false });
+    const response = await GET(
+      new Request('https://docketkite.apps.grok.bot/api/account/owner-access'),
+    );
+    await expect(response.json()).resolves.toEqual({
+      eligible: false,
+      needsVerification: true,
+    });
+  });
+
+  it('grants admin only when the stored mailbox is verified', async () => {
     const response = await post('correct-horse-battery');
     expect(response.status).toBe(200);
     expect(mocks.updateMany).toHaveBeenCalledWith({
       where: { id: 'owner-user', email: 'owner@example.test', emailVerified: true },
       data: { role: 'admin' },
     });
+    expect(mocks.isRateLimited).toHaveBeenCalledWith('owner-access:owner-user', 5, 15 * 60 * 1000);
   });
 
-  it('does not grant admin when the email is not verified', async () => {
+  it('refuses an unverified stored user even when the session says otherwise', async () => {
     mocks.requireAuth.mockResolvedValue({
       id: 'owner-user',
       email: 'owner@example.test',
       role: 'user',
-      emailVerified: false,
+      emailVerified: true,
     });
+    mocks.findUnique.mockResolvedValue({ ...storedOwner, emailVerified: false });
     const response = await post('correct-horse-battery');
     expect(response.status).toBe(403);
     await expect(response.json()).resolves.toEqual({ error: 'owner_access_email_unverified' });
     expect(mocks.updateMany).not.toHaveBeenCalled();
+    expect(mocks.matches).not.toHaveBeenCalled();
+  });
+
+  it('does not promote when the verified write matches no row', async () => {
+    mocks.updateMany.mockResolvedValue({ count: 0 });
+    const response = await post('correct-horse-battery');
+    expect(response.status).toBe(403);
+    await expect(response.json()).resolves.toEqual({ error: 'owner_access_email_unverified' });
   });
 
   it('does not grant admin when the code does not match', async () => {
     mocks.matches.mockReturnValue(false);
     const response = await post('wrong-access-code');
     expect(response.status).toBe(403);
+    await expect(response.json()).resolves.toEqual({ error: 'owner_access_denied' });
+    expect(mocks.updateMany).not.toHaveBeenCalled();
+  });
+
+  it('rate limits before reading the account', async () => {
+    mocks.isRateLimited.mockResolvedValue(true);
+    const response = await post('correct-horse-battery');
+    expect(response.status).toBe(429);
+    expect(mocks.findUnique).not.toHaveBeenCalled();
     expect(mocks.updateMany).not.toHaveBeenCalled();
   });
 });
