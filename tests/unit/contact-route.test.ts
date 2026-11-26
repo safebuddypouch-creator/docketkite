@@ -5,6 +5,7 @@ const mocks = vi.hoisted(() => ({
   create: vi.fn(),
   sendEmail: vi.fn(),
   recordSubmission: vi.fn(),
+  isRateLimited: vi.fn(),
 }));
 
 vi.mock('server-only', () => ({}));
@@ -15,6 +16,10 @@ vi.mock('@/lib/email/send', () => ({ sendEmail: mocks.sendEmail }));
 vi.mock('@/lib/email/submissions', () => ({ recordSubmission: mocks.recordSubmission }));
 vi.mock('@/lib/same-origin', () => ({ sameOrigin: () => true }));
 vi.mock('@/lib/env', () => ({ env: {} }));
+vi.mock('@/lib/public-form-rate-limit', () => ({
+  clientIp: () => '203.0.113.10',
+  isRateLimited: mocks.isRateLimited,
+}));
 
 import { POST } from '@/app/api/contact/route';
 
@@ -35,6 +40,7 @@ describe('public contact route', () => {
     vi.clearAllMocks();
     mocks.create.mockResolvedValue({ id: 'message-1' });
     mocks.recordSubmission.mockResolvedValue({ recorded: true });
+    mocks.isRateLimited.mockReturnValue(false);
   });
 
   it('saves the message and does not email a personal inbox', async () => {
@@ -51,5 +57,14 @@ describe('public contact route', () => {
 
     expect(response.status).toBe(201);
     expect(mocks.sendEmail).not.toHaveBeenCalled();
+  });
+
+  it('rejects a flood with 429 before writing', async () => {
+    mocks.isRateLimited.mockReturnValue(true);
+
+    const response = await POST(request());
+
+    expect(response.status).toBe(429);
+    expect(mocks.create).not.toHaveBeenCalled();
   });
 });

@@ -1,6 +1,7 @@
 // @polsia:user-owned — paid-team access to the original permit letter.
 import 'server-only';
 import { NextResponse } from 'next/server';
+import { isAllowedLegacyLetterSourceUrl } from '@/lib/business/legacy-letter-source-url';
 import { readStoredUploadBytes } from '@/lib/business/stored-upload';
 import {
   MAX_CORRECTION_LETTER_SIZE_BYTES,
@@ -68,18 +69,11 @@ export async function GET(request: Request, { params }: { params: Promise<{ lett
   }
 
   // Legacy letters uploaded through Polsia R2 before local storage.
-  let sourceUrl: URL;
-  try {
-    sourceUrl = new URL(letter.fileUrl);
-  } catch {
+  // Allowlist only R2 (and the deploy's configured R2 base) — never arbitrary HTTPS.
+  if (!isAllowedLegacyLetterSourceUrl(letter.fileUrl)) {
     return unavailable();
   }
-  if (sourceUrl.protocol !== 'https:' || sourceUrl.username || sourceUrl.password) {
-    return unavailable();
-  }
-  if (sourceUrl.hostname === 'files.docketkitepermits.com') {
-    return unavailable();
-  }
+  const sourceUrl = new URL(letter.fileUrl);
 
   let source: Response;
   try {
