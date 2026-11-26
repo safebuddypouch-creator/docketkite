@@ -1,4 +1,4 @@
-// @polsia:user-owned — regression coverage for City of Tampa permit CSV validation.
+// @polsia:user-owned — regression coverage for Florida Accela permit CSV validation.
 import { describe, expect, it } from 'vitest';
 import {
   parsePermitImportKey,

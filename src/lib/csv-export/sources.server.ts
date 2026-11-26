@@ -88,7 +88,7 @@ const permitCsvSource = defineCsvSource<PermitExportRow, PermitExportFilters>({
     },
     {
       key: 'portal_url',
-      label: 'Permit portal URL (only City of Tampa Accela links are actively checked)',
+      label: 'Permit portal URL (only Florida Accela Building links are actively checked)',
       kind: 'text',
       access: 'editable',
       nullable: false,

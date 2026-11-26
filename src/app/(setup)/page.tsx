@@ -389,9 +389,9 @@ export default function HomePage() {
           <span />
         </div>
         <div className={styles.contactContent}>
-          <p className={styles.eyebrow}>EARLY ACCESS · TAMPA ONLY</p>
+          <p className={styles.eyebrow}>EARLY ACCESS · FLORIDA ACCELA</p>
           <h2 id="early-access-title">
-            Run a residential remodeling company with City of Tampa permits?
+            Run a residential remodeling company with Florida Accela permits?
           </h2>
           <p>
             Join the early-access list and help shape a permit follow-up workflow for your team.

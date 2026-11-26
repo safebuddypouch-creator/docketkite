@@ -129,7 +129,7 @@ export function TeamStatusAlertRecipientSettings({ teamId }: { teamId: string })
           Status alert recipients
         </h3>
         <CardDescription>
-          Choose current team members for verified City of Tampa Record Status changes. Until you
+          Choose current team members for verified Florida Accela Record Status changes. Until you
           save a custom selection, an alert goes only to that permit’s assigned project manager.
         </CardDescription>
       </CardHeader>

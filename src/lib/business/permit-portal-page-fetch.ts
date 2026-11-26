@@ -1,5 +1,6 @@
-// @polsia:user-owned — fetch City of Tampa Accela record pages without Polsia.
+// @polsia:user-owned — fetch Florida Accela record pages without Polsia.
 import 'server-only';
+import { OFFICIAL_FLORIDA_ACCELA_RECORD_URL_HINT } from '@/lib/business/florida-accela-agencies';
 import { getOfficialPermitPortalUrl } from '@/lib/contracts/permit';
 
 const FETCH_TIMEOUT_MS = 20_000;
@@ -13,7 +14,7 @@ export class PermitPortalPageUnavailableError extends Error {
 }
 
 export class PermitPortalInvalidUrlError extends Error {
-  constructor(message = 'Enter a direct City of Tampa Building record URL from the official Accela portal.') {
+  constructor(message = OFFICIAL_FLORIDA_ACCELA_RECORD_URL_HINT) {
     super(message);
     this.name = 'PermitPortalInvalidUrlError';
   }
@@ -28,8 +29,9 @@ export type PermitPortalFetchedPage = {
 };
 
 /**
- * Reads a public Tampa CapDetail page over HTTPS. Only official Building record
- * URLs are allowed, so the destination cannot be steered to another host.
+ * Reads a public Florida Accela CapDetail page over HTTPS. Only allowlisted
+ * Building record URLs are allowed, so the destination cannot be steered to
+ * another host or unsupported agency.
  */
 export async function fetchPermitPortalPage(input: {
   url: string;
@@ -62,7 +64,7 @@ export async function fetchPermitPortalPage(input: {
     const bytes = truncated ? buffer.slice(0, MAX_BYTES) : buffer;
     const markdown = new TextDecoder('utf-8').decode(bytes);
     const titleMatch = markdown.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
-    const title = titleMatch?.[1]?.replace(/\s+/g, ' ').trim() || 'City of Tampa Accela record';
+    const title = titleMatch?.[1]?.replace(/\s+/g, ' ').trim() || 'Florida Accela record';
     return {
       markdown,
       title,

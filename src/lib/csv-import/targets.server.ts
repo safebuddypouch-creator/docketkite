@@ -58,7 +58,7 @@ const fields = [
   },
   {
     key: 'portal_url',
-    label: 'City of Tampa Accela record URL',
+    label: 'Florida Accela Building record URL',
     // A column is optional to map so preview can report each missing row URL.
     // parsePermitImportRow still rejects every row without a valid direct record link.
     required: false,

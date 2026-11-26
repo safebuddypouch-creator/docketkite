@@ -344,7 +344,7 @@ export function PermitDetails({ permitId }: { permitId: string }) {
           ) : (
             <p className="text-sm text-muted-foreground">
               {permit.portalUrl
-                ? 'The saved portal URL is unsupported. Update it to a direct City of Tampa Accela Building record URL.'
+                ? 'The saved portal URL is unsupported. Update it to a direct Florida Accela Building record URL.'
                 : 'Add a direct public City record URL to enable public-record checks.'}
             </p>
           )}
@@ -370,7 +370,7 @@ export function PermitDetails({ permitId }: { permitId: string }) {
           >
             <div className="grid gap-1.5">
               <label htmlFor="permit-portal-url" className="text-sm font-medium text-foreground">
-                Official City of Tampa Accela Building record URL
+                Official Florida Accela Building record URL
               </label>
               <Input
                 id="permit-portal-url"
@@ -392,7 +392,7 @@ export function PermitDetails({ permitId }: { permitId: string }) {
                 required
               />
               <p id="permit-portal-url-help" className="text-xs leading-5 text-muted-foreground">
-                Use a direct HTTPS record detail URL from the official City of Tampa Accela Building
+                Use a direct HTTPS record detail URL from a supported official Florida Accela Building
                 portal. A mailing address alone does not establish City jurisdiction.
               </p>
               {portalUrlError ? (

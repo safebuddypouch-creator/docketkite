@@ -1,5 +1,10 @@
 // @polsia:user-owned — shared zod contract for permit records.
 import { z } from 'zod';
+import {
+  isFloridaAccelaAgencyCode,
+  normalizeAccelaAgencyCode,
+  OFFICIAL_FLORIDA_ACCELA_RECORD_URL_HINT,
+} from '@/lib/business/florida-accela-agencies';
 
 export const CITY_OF_TAMPA_PERMIT_PORTAL_URL =
   'https://aca-prod.accela.com/TAMPA/Cap/CapHome.aspx?TabName=Building&module=Building';
@@ -14,7 +19,7 @@ function uniqueQueryValue(url: URL, name: string): string | null {
   return value ? value : null;
 }
 
-function isOfficialTampaPermitRecordUrl(value: string): boolean {
+function isOfficialFloridaAccelaBuildingRecordUrl(value: string): boolean {
   const hasWhitespaceOrControlCharacter = Array.from(value).some((character) => {
     const codePoint = character.charCodeAt(0);
     return character.trim() === '' || codePoint <= 0x1f || codePoint === 0x7f;
@@ -45,18 +50,23 @@ function isOfficialTampaPermitRecordUrl(value: string): boolean {
     ) {
       return false;
     }
+    const pathMatch = url.pathname.match(/^\/([^/]+)\/Cap\/CapDetail\.aspx$/i);
+    const pathAgency = pathMatch?.[1];
+    if (!pathAgency) return false;
     const hasRecordIds = ['capID1', 'capID2', 'capID3'].every(
       (name) => uniqueQueryValue(url, name) !== null,
     );
     const agencyCode = uniqueQueryValue(url, 'agencyCode');
     const module = uniqueQueryValue(url, 'Module');
+    if (!agencyCode) return false;
+    const normalizedAgency = normalizeAccelaAgencyCode(agencyCode);
+    if (normalizeAccelaAgencyCode(pathAgency) !== normalizedAgency) return false;
     return (
       url.protocol === 'https:' &&
       !url.username &&
       !url.password &&
       hostname === 'aca-prod.accela.com' &&
-      url.pathname.toLowerCase() === '/tampa/cap/capdetail.aspx' &&
-      agencyCode?.toUpperCase() === 'TAMPA' &&
+      isFloridaAccelaAgencyCode(normalizedAgency) &&
       module?.toLowerCase() === 'building' &&
       hasRecordIds
     );
@@ -70,8 +80,8 @@ export const PermitPortalUrl = z
   .trim()
   .max(2048, 'Use 2,048 characters or fewer')
   .refine(
-    (value) => value === '' || isOfficialTampaPermitRecordUrl(value),
-    'Enter a direct City of Tampa Building record URL from the official Accela portal.',
+    (value) => value === '' || isOfficialFloridaAccelaBuildingRecordUrl(value),
+    OFFICIAL_FLORIDA_ACCELA_RECORD_URL_HINT,
   );
 
 export const PermitPortalUrlRequired = PermitPortalUrl.refine(

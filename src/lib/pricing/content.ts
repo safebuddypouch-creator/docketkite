@@ -84,12 +84,12 @@ export const pricingContent: PricingContent = {
       id: 'private-team-workspace',
       name: 'Private team workspace',
       description:
-        'A shared City of Tampa permit workspace with on-demand checks of linked official public Accela records and email alerts after a verified public status transition.',
+        'A shared Florida Accela permit workspace with on-demand checks of linked official public Accela Building records and email alerts after a verified public status transition.',
       prices: { month: 299 },
       unit: 'per team',
       features: [
-        'Private City of Tampa permit workspace',
-        'On-demand checks of linked official City of Tampa Accela record pages',
+        'Private Florida Accela permit workspace',
+        'On-demand checks of linked official Florida Accela Building record pages',
         'Email to the assigned project manager after a verified public record status transition',
         'Email to the team owner when a public record check is interrupted',
         'Owner and purchaser permissions',

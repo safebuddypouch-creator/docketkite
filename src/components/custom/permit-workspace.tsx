@@ -142,7 +142,7 @@ function PermitEditor({
         </label>
         <label className="grid gap-1.5 text-sm font-medium" htmlFor={portalUrlId}>
           <span className="flex flex-wrap items-baseline justify-between gap-x-2">
-            <span>Official City of Tampa Accela Building record URL</span>
+            <span>Official Florida Accela Building record URL</span>
             <span className="font-normal text-muted-foreground">
               {editing ? 'Optional for older records' : 'Required'}
             </span>
@@ -159,8 +159,8 @@ function PermitEditor({
           />
           <FieldError message={form.formState.errors.portalUrl?.message} />
           <span id={portalUrlHelpId} className="text-xs font-normal text-muted-foreground">
-            Use the direct Building detail page with the record IDs in its URL. A Tampa mailing
-            address alone does not establish City jurisdiction. Checks are on demand, confirm the
+            Use a direct Florida Accela Building detail page with the record IDs in its URL. A
+            mailing address alone does not establish jurisdiction. Checks are on demand, confirm the
             permit number, and do not access applicant-only details.
           </span>
           {officialPortalUrl ? (
@@ -528,7 +528,7 @@ function PermitCard({
                 target="_blank"
                 rel="noreferrer"
               >
-                Official City of Tampa Accela record
+                Official Florida Accela record
               </a>
               <p className="text-xs text-muted-foreground">
                 Tampa public record link. Applicant-only information is not accessed.
@@ -1291,7 +1291,7 @@ export function PermitWorkspace({
           </summary>
           <div className="border-t border-border px-5 py-5 sm:px-6">
             <p className="mb-5 max-w-2xl text-sm leading-6 text-muted-foreground">
-              Add City of Tampa permit records to this team. Every row needs a direct City of Tampa
+              Add Florida Accela permit records to this team. Every row needs a direct Florida
               Accela Building record URL with its record IDs; portal home, search, and non-Building
               links are rejected. Existing records are skipped, and no rows are saved if any row has
               an issue.

@@ -83,7 +83,7 @@ function retrievalFailure(error: unknown): { result: 'unavailable'; message: str
   if (error instanceof PermitPortalInvalidUrlError) {
     return {
       result: 'unavailable',
-      message: 'Enter a direct City of Tampa Building record URL from the official Accela portal.',
+      message: 'Enter a direct Florida Accela Building record URL from an official supported portal.',
     };
   }
   if (error instanceof PermitPortalPageUnavailableError) {

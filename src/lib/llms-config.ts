@@ -34,7 +34,7 @@ if (process.env.SEO_INDEXABLE !== 'true' && process.env.SEO_INDEXABLE !== 'false
 
 export const llmsConfig: LlmsConfig = {
   intro:
-    'DocketKite is for residential remodeling teams checking City of Tampa permits. A team member starts each check of a linked public Accela record. DocketKite stores that publicly visible record status. Checks are not scheduled, do not read applicant-only files, and do not send SMS. Background monitoring is unavailable.',
+    'DocketKite is for residential remodeling teams checking Florida Accela Building permits. A team member starts each check of a linked public Accela record from a supported Florida agency. DocketKite stores that publicly visible record status. Checks are not scheduled, do not read applicant-only files, and do not send SMS. Background monitoring is unavailable.',
   pageDescriptions: {
     '/': 'Overview of on-demand City of Tampa permit checks for remodeling teams.',
     '/pricing':

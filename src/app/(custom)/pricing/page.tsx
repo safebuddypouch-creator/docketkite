@@ -83,7 +83,7 @@ export default function PricingPage() {
           Public checks and team status updates
         </h2>
         <p className="mt-2 text-sm leading-6 text-muted-foreground">
-          A team member starts each check for a linked official City of Tampa public Accela record.
+          A team member starts each check for a linked official Florida Accela Building record.
           DocketKite stores the exact Record Status only after the page confirms the permit number.
           Checks do not run continuously or on a schedule and do not access applicant-only
           information. A verified transition can email the assigned project manager; an interrupted

@@ -33,7 +33,7 @@ describe('DocketKite pricing content', () => {
     if (!tier) throw new Error('The team pricing tier is missing.');
 
     const includedOffer = [tier.description, ...tier.features].join(' ');
-    expect(includedOffer).toMatch(/on-demand checks of linked official City of Tampa Accela record pages/i);
+    expect(includedOffer).toMatch(/on-demand checks of linked official Florida Accela Building record pages/i);
     expect(includedOffer).toMatch(/assigned project manager after a verified public record status transition/i);
     expect(includedOffer).toMatch(/team owner when a public record check is interrupted/i);
     expect(includedOffer).not.toMatch(/monitoring.{0,30}planned|automated.*portal|sms alerts/i);

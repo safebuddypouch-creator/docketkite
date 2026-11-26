@@ -178,9 +178,9 @@ test('an owner sees row-level errors and cannot commit an invalid CSV', async (
   await page.getByRole('button', { name: 'Check file' }).click();
   await expect(page.getByText('4 rows need attention.')).toBeVisible();
   await expect(page.getByText(/Row 3 · Permit type: Use one of these permit types/)).toBeVisible();
-  await expect(page.getByText(/Row 4 · City of Tampa Accela record URL: Use a nonempty, direct City of Tampa Accela Building record URL/)).toBeVisible();
-  await expect(page.getByText(/Row 5 · City of Tampa Accela record URL: Use a nonempty, direct City of Tampa Accela Building record URL/)).toBeVisible();
-  await expect(page.getByText(/Row 6 · City of Tampa Accela record URL: Use a nonempty, direct City of Tampa Accela Building record URL/)).toBeVisible();
+  await expect(page.getByText(/Row 4 · Florida Accela Building record URL: Use a nonempty, direct Florida Accela Building record URL/)).toBeVisible();
+  await expect(page.getByText(/Row 5 · Florida Accela Building record URL: Use a nonempty, direct Florida Accela Building record URL/)).toBeVisible();
+  await expect(page.getByText(/Row 6 · Florida Accela Building record URL: Use a nonempty, direct Florida Accela Building record URL/)).toBeVisible();
   await expect(page.getByRole('button', { name: 'Import 1 row' })).toBeDisabled();
 
   const rejectedCommit = await postImport(page, origin, firstTeam.id ?? '', 'commit', invalidCsv);
@@ -198,7 +198,7 @@ test('an owner sees row-level errors and cannot commit an invalid CSV', async (
   await page.setViewportSize(
     testInfo.project.name === 'mobile' ? { width: 390, height: 844 } : { width: 1440, height: 900 },
   );
-  await page.getByText(/Row 6 · City of Tampa Accela record URL:/).scrollIntoViewIfNeeded();
+  await page.getByText(/Row 6 · Florida Accela Building record URL:/).scrollIntoViewIfNeeded();
   await page.screenshot({ path: testInfo.outputPath('permit-import-invalid-preview.png') });
   await page.getByRole('button', { name: 'Start over' }).click();
   const linklessHeaders = headers.slice(0, 6);
@@ -213,7 +213,7 @@ test('an owner sees row-level errors and cannot commit an invalid CSV', async (
   await expect(page.getByRole('button', { name: 'Check file' })).toBeEnabled();
   await page.getByRole('button', { name: 'Check file' }).click();
   await expect(
-    page.getByText(/Row 2 · City of Tampa Accela record URL: Use a nonempty, direct City of Tampa Accela Building record URL/),
+    page.getByText(/Row 2 · Florida Accela Building record URL: Use a nonempty, direct Florida Accela Building record URL/),
   ).toBeVisible();
 
   const mappingWithoutLink = { ...mapping };
@@ -430,7 +430,7 @@ test('an owner can choose unmatched CSV columns and save the selected permit val
   });
   await page.getByLabel('Status column (required)').selectOption({ label: 'chosen_review_stage' });
   await page.getByLabel('Notes column').selectOption({ label: 'chosen_team_note' });
-  await page.getByLabel('City of Tampa Accela record URL column (required)').selectOption({
+  await page.getByLabel('Florida Accela Building record URL column (required)').selectOption({
     label: 'chosen_tampa_record_link',
   });
 

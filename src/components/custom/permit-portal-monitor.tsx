@@ -1,4 +1,4 @@
-// @polsia:user-owned — on-demand public City of Tampa status checks and history.
+// @polsia:user-owned — on-demand public Florida Accela status checks and history.
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
@@ -60,8 +60,8 @@ export function PermitPortalMonitor({
   const [working, setWorking] = useState(false);
   const [historyError, setHistoryError] = useState(false);
   const [actionError, setActionError] = useState('');
-  const tampaPortalUrl = getOfficialPermitPortalUrl(portalUrl);
-  const ready = Boolean(permitNumber.trim() && tampaPortalUrl);
+  const officialPortalUrl = getOfficialPermitPortalUrl(portalUrl);
+  const ready = Boolean(permitNumber.trim() && officialPortalUrl);
   const query = new URLSearchParams({ permitId, teamId }).toString();
   const latestCheck = checks?.[0] ?? null;
   const retryingFailure = latestCheck !== null && latestCheck.result !== 'checked';
@@ -130,15 +130,15 @@ export function PermitPortalMonitor({
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">
-            {tampaPortalUrl
-              ? 'City of Tampa · public record'
+            {officialPortalUrl
+              ? 'Florida Accela · public record'
               : portalUrl
                 ? 'Unsupported portal link · not monitored'
                 : 'No public record link'}
           </p>
           <h3 className="mt-1 text-base font-semibold text-foreground">Watcher health</h3>
           <p className="mt-1 max-w-2xl text-xs leading-5 text-muted-foreground">
-            Checks read only the public City of Tampa page; they do not access secure or
+            Checks read only the public Florida Accela page; they do not access secure or
             applicant-only records. The hosted watcher is scheduled hourly while DocketKite&apos;s
             platform subscription is active, and team owners can run a one-off public check. The
             exact Record Status is stored separately from your team&apos;s status, notes, and
@@ -165,8 +165,8 @@ export function PermitPortalMonitor({
         {working ? (
           <output className="text-sm text-muted-foreground" aria-live="polite">
             {retryingFailure
-              ? 'Retrying the public City of Tampa record check…'
-              : 'Checking the public City of Tampa record…'}
+              ? 'Retrying the public Florida Accela record check…'
+              : 'Checking the public Florida Accela record…'}
           </output>
         ) : null}
       </div>
@@ -184,7 +184,7 @@ export function PermitPortalMonitor({
           <>
             <div>
               <p className="text-xs font-medium text-muted-foreground">
-                Last successful City of Tampa portal check
+                Last successful Florida Accela portal check
               </p>
               <p className="mt-1 text-sm font-semibold text-foreground">
                 {monitoring.lastSuccessfulPortalCheckAt ? (
@@ -216,22 +216,22 @@ export function PermitPortalMonitor({
       </div>
 
       <section
-        aria-label="Last verified City of Tampa portal result"
+        aria-label="Last verified Florida Accela portal result"
         className="grid gap-2 rounded-lg border border-border bg-background/80 p-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end sm:p-4"
       >
         <div>
           <p className="text-xs font-medium text-muted-foreground">
             {latestCheck?.result === 'checked'
-              ? 'Verified public City of Tampa result · Record Status'
-              : 'Last successful public City of Tampa result · Record Status'}
+              ? 'Verified public Florida Accela result · Record Status'
+              : 'Last successful public Florida Accela result · Record Status'}
           </p>
           <p className="mt-1 break-words text-base font-semibold text-foreground">
             {loading
               ? 'Loading saved portal result…'
               : historyError
-                ? 'The saved City of Tampa result could not be loaded.'
+                ? 'The saved Florida Accela result could not be loaded.'
                 : (latestVerified?.status ??
-                  'No successful City of Tampa result has been verified yet.')}
+                  'No successful Florida Accela result has been verified yet.')}
           </p>
           {latestVerified ? (
             <p className="mt-1 text-xs text-muted-foreground">
@@ -266,7 +266,7 @@ export function PermitPortalMonitor({
 
       {latestCheck && latestCheck.result !== 'checked' ? (
         <section
-          aria-label="Latest City of Tampa monitoring attempt"
+          aria-label="Latest Florida Accela monitoring attempt"
           className="grid gap-2 rounded-lg border border-destructive/30 bg-destructive/[0.035] p-3 sm:p-4"
         >
           <div className="flex flex-wrap items-center gap-2">
@@ -309,8 +309,8 @@ export function PermitPortalMonitor({
 
       {!ready ? (
         <p className="rounded-lg border border-dashed border-border bg-background/70 px-3 py-3 text-sm text-muted-foreground">
-          Add the permit number and its direct City of Tampa Building Accela record URL under Edit
-          to enable an on-demand public check.
+          Add the permit number and its direct Florida Accela Building record URL under Edit to
+          enable an on-demand public check.
         </p>
       ) : null}
       {archived ? (
@@ -402,7 +402,7 @@ export function PermitPortalMonitor({
                   target="_blank"
                   rel="noreferrer"
                 >
-                  Open City of Tampa source
+                  Open Florida Accela source
                 </a>
               ) : null}
             </li>

@@ -5,13 +5,13 @@ export const comparisonContent: ComparisonContent = {
   eyebrow: 'City of Tampa permit coverage · reviewed November 17, 2026',
   title: 'The City record, and what DocketKite can read from it.',
   intro:
-    'DocketKite supports City of Tampa municipal permit records through the City’s official Accela portal. A Tampa mailing address alone does not establish jurisdiction. This page distinguishes what the public portal exposed in a small anonymous sample from what the team workspace does today.',
-  tableCaption: 'City of Tampa Accela public permit records and DocketKite workflow',
+    'DocketKite supports Florida Accela Building permit records through official Citizen Access portals, with City of Tampa as the documented sample. A Florida mailing address alone does not establish jurisdiction. This page distinguishes what a public portal exposed in a small anonymous sample from what the team workspace does today.',
+  tableCaption: 'Florida Accela public permit records and DocketKite workflow',
   columns: [
     {
       id: 'tampa-accela',
-      name: 'City of Tampa Accela',
-      description: 'Official municipal permit record portal',
+      name: 'Florida Accela',
+      description: 'Official municipal Accela Building record portals',
     },
     {
       id: 'docketkite',
@@ -27,11 +27,12 @@ export const comparisonContent: ComparisonContent = {
       rows: [
         {
           label: 'Jurisdiction',
-          description: 'Permit records must belong to the City of Tampa.',
+          description: 'Permit records must belong to a supported Florida Accela Building agency.',
           values: {
-            'tampa-accela': 'City of Tampa municipal records in the TAMPA Accela agency.',
+            'tampa-accela':
+              'Florida Accela agencies such as City of Tampa (TAMPA), Hillsborough County (HCFL), Pasco, Pinellas, and other curated Florida Building portals.',
             docketkite:
-              'Only direct City of Tampa Accela Building record URLs are accepted for active checks. Hillsborough County, nearby municipalities, and broader Tampa-area coverage are unsupported.',
+              'Only direct CapDetail Building record URLs from the curated Florida Accela allowlist are accepted for active checks. Non-Accela Florida portals and out-of-state Accela agencies remain unsupported.',
           },
         },
         {

@@ -132,7 +132,7 @@ describe('permit watcher health load state', () => {
     );
     expect(container.textContent).not.toContain('No successful checks yet');
     expect(container.textContent).not.toContain(
-      'No successful City of Tampa result has been verified yet.',
+      'No successful Florida Accela result has been verified yet.',
     );
     expect(container.textContent).not.toContain('No interruption recorded');
     expect(container.textContent).not.toContain('Loading saved watcher health');
@@ -165,7 +165,7 @@ describe('permit watcher health load state', () => {
     });
 
     expect(container.textContent).toContain('Technical Review');
-    expect(container.textContent).toContain('Verified public City of Tampa result · Record Status');
+    expect(container.textContent).toContain('Verified public Florida Accela result · Record Status');
     expect(container.querySelector('time')?.getAttribute('dateTime')).toBe(savedAt);
     expect(container.textContent).not.toContain('Retry check');
   });
@@ -273,9 +273,9 @@ describe('permit watcher health load state', () => {
     );
 
     const container = await renderMonitor({ retryOnly });
-    const summary = container.querySelector('[aria-label="Last verified City of Tampa portal result"]');
+    const summary = container.querySelector('[aria-label="Last verified Florida Accela portal result"]');
 
-    expect(summary?.textContent).toContain('Last successful public City of Tampa result · Record Status');
+    expect(summary?.textContent).toContain('Last successful public Florida Accela result · Record Status');
     expect(summary?.textContent).toContain('Awaiting Client Reply');
     expect(summary?.textContent).toContain('last successful public reading');
     expect(summary?.querySelector('time')?.getAttribute('dateTime')).toBe(savedAt);
@@ -283,7 +283,7 @@ describe('permit watcher health load state', () => {
     expect(container.textContent).toContain('The public City record could not be read.');
     expect(
       container
-        .querySelector('[aria-label="Latest City of Tampa monitoring attempt"]')
+        .querySelector('[aria-label="Latest Florida Accela monitoring attempt"]')
         ?.textContent,
     ).toContain('Unavailable');
     expect(container.textContent).toContain(retryOnly ? 'Retry check' : 'Run public check');
@@ -307,10 +307,10 @@ describe('permit watcher health load state', () => {
 
     const container = await renderMonitor({ retryOnly: true });
     const attempt = container.querySelector(
-      '[aria-label="Latest City of Tampa monitoring attempt"]',
+      '[aria-label="Latest Florida Accela monitoring attempt"]',
     );
     const summary = container.querySelector(
-      '[aria-label="Last verified City of Tampa portal result"]',
+      '[aria-label="Last verified Florida Accela portal result"]',
     );
 
     expect(attempt?.textContent).toContain('Unverified');
@@ -323,7 +323,7 @@ describe('permit watcher health load state', () => {
     expect(attempt?.querySelector('a')?.getAttribute('href')).toBe(tampaUrl);
     expect(summary?.textContent).toContain('Complete');
     expect(summary?.textContent).toContain('last successful public reading');
-    expect(summary?.textContent).toContain('Last successful public City of Tampa result · Record Status');
+    expect(summary?.textContent).toContain('Last successful public Florida Accela result · Record Status');
     expect(summary?.querySelector('time')?.getAttribute('dateTime')).toBe(savedAt);
     expect(container.textContent).toContain('Retry check');
   });
@@ -340,10 +340,10 @@ describe('permit watcher health load state', () => {
 
     const container = await renderMonitor();
     const summary = container.querySelector(
-      '[aria-label="Last verified City of Tampa portal result"]',
+      '[aria-label="Last verified Florida Accela portal result"]',
     );
 
-    expect(summary?.textContent).toContain('Verified public City of Tampa result · Record Status');
+    expect(summary?.textContent).toContain('Verified public Florida Accela result · Record Status');
     expect(summary?.textContent).toContain('Technical Review');
     expect(summary?.textContent).toContain('City page read');
     expect(summary?.querySelectorAll('time')[0]?.getAttribute('dateTime')).toBe(savedAt);
@@ -351,7 +351,7 @@ describe('permit watcher health load state', () => {
     expect(summary?.querySelector('a')?.getAttribute('href')).toBe(tampaUrl);
     expect(container.textContent).toContain('Run public check');
     expect(container.textContent).toContain(
-      'Checks read only the public City of Tampa page; they do not access secure or applicant-only records.',
+      'Checks read only the public Florida Accela page; they do not access secure or applicant-only records.',
     );
   });
 
@@ -371,10 +371,10 @@ describe('permit watcher health load state', () => {
 
     const container = await renderMonitor({ retryOnly: true });
     const summary = container.querySelector(
-      '[aria-label="Last verified City of Tampa portal result"]',
+      '[aria-label="Last verified Florida Accela portal result"]',
     );
     const attempt = container.querySelector(
-      '[aria-label="Latest City of Tampa monitoring attempt"]',
+      '[aria-label="Latest Florida Accela monitoring attempt"]',
     );
 
     expect(attempt?.textContent).toContain(reason);
@@ -421,10 +421,10 @@ describe('permit watcher health load state', () => {
 
       const container = await renderMonitor({ retryOnly: true });
       const summary = container.querySelector(
-        '[aria-label="Last verified City of Tampa portal result"]',
+        '[aria-label="Last verified Florida Accela portal result"]',
       );
       const attempt = container.querySelector(
-        '[aria-label="Latest City of Tampa monitoring attempt"]',
+        '[aria-label="Latest Florida Accela monitoring attempt"]',
       );
 
       expect(attempt?.textContent).toContain(
@@ -439,7 +439,7 @@ describe('permit watcher health load state', () => {
         expect(summary?.querySelector('a')?.getAttribute('href')).toBe(tampaUrl);
       } else {
         expect(summary?.textContent).toContain(
-          'No successful City of Tampa result has been verified yet.',
+          'No successful Florida Accela result has been verified yet.',
         );
         expect(summary?.textContent).not.toContain('Issued');
       }
@@ -458,7 +458,7 @@ describe('permit watcher health load state', () => {
     const container = await renderMonitor(input);
 
     expect(container.textContent).toContain(
-      'Add the permit number and its direct City of Tampa Building Accela record URL under Edit to enable an on-demand public check.',
+      'Add the permit number and its direct Florida Accela Building record URL under Edit to enable an on-demand public check.',
     );
     expect(container.querySelector('button')?.textContent).toBe('Run public check');
     expect(container.querySelector('button')?.hasAttribute('disabled')).toBe(true);

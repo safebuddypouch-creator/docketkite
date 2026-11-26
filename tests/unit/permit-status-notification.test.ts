@@ -66,7 +66,7 @@ describe('permit status notifications', () => {
     expect(message.text).toContain('Checked at (UTC): 2026-10-31T09:14:05.000Z');
     expect(message.text).toContain('1. Add the missing fixture schedule (Plan E-2)');
     expect(message.text).toContain('2. Provide the requested equipment specifications');
-    expect(message.text).toContain(`Official City of Tampa record: ${sourceUrl}`);
+    expect(message.text).toContain(`Official Florida Accela record: ${sourceUrl}`);
     expect(message.html).toContain(`href="${sourceUrl.replace(/&/g, '&amp;')}"`);
   });
 

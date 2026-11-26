@@ -131,11 +131,11 @@ test('a team owner can add, change, clear, and reopen a permit portal link', asy
     .filter({ has: page.getByRole('heading', { name: 'QA Portal Kitchen Remodel' }) });
   await expect(permitCard).toBeVisible();
   await permitCard.getByRole('button', { name: 'Edit' }).click();
-  const portalInput = permitCard.getByLabel('Official City of Tampa Accela Building record URL');
+  const portalInput = permitCard.getByLabel('Official Florida Accela Building record URL');
   await expect(portalInput).toHaveValue('');
   await expect(
     permitCard.getByText(
-      'A Tampa mailing address alone does not establish City jurisdiction. Only a direct City of Tampa Accela Building record URL enables a public check. A check stores the raw Record Status after the page confirms this permit number; applicant-only details are not accessed. Checks run on demand, not on a schedule.',
+      'Use a direct Florida Accela Building detail page with the record IDs in its URL. A mailing address alone does not establish jurisdiction. Checks are on demand, confirm the permit number, and do not access applicant-only details.',
     ),
   ).toBeVisible();
 
@@ -143,7 +143,7 @@ test('a team owner can add, change, clear, and reopen a permit portal link', asy
   await portalInput.fill(firstUrl);
   await permitCard.getByRole('button', { name: 'Save changes' }).click();
   const portalLink = permitCard.getByRole('link', {
-    name: 'Official City of Tampa Accela record',
+    name: 'Official Florida Accela record',
   });
   await expect(portalLink).toHaveAttribute('href', firstUrl);
   await expect(portalLink).toHaveAttribute('target', '_blank');
@@ -160,11 +160,11 @@ test('a team owner can add, change, clear, and reopen a permit portal link', asy
     .locator('article')
     .filter({ has: page.getByRole('heading', { name: 'QA Portal Kitchen Remodel' }) });
   const reopenedLink = reopenedCard.getByRole('link', {
-    name: 'Official City of Tampa Accela record',
+    name: 'Official Florida Accela record',
   });
   await expect(reopenedLink).toHaveAttribute('href', firstUrl);
   await reopenedCard.getByRole('button', { name: 'Edit' }).click();
-  const reopenedInput = reopenedCard.getByLabel('Official City of Tampa Accela Building record URL');
+  const reopenedInput = reopenedCard.getByLabel('Official Florida Accela Building record URL');
   await expect(reopenedInput).toHaveValue(firstUrl);
   const editLink = reopenedCard.getByRole('link', { name: 'Open saved City portal link' });
   await expect(editLink).toHaveAttribute('href', firstUrl);
@@ -174,7 +174,7 @@ test('a team owner can add, change, clear, and reopen a permit portal link', asy
   await reopenedInput.fill(secondUrl);
   await reopenedCard.getByRole('button', { name: 'Save changes' }).click();
   await expect(
-    reopenedCard.getByRole('link', { name: 'Official City of Tampa Accela record' }),
+    reopenedCard.getByRole('link', { name: 'Official Florida Accela record' }),
   ).toHaveAttribute('href', secondUrl);
   expect((await prisma.permit.findUnique({ where: { id: permit.id } }))?.portalUrl).toBe(secondUrl);
 
@@ -183,14 +183,14 @@ test('a team owner can add, change, clear, and reopen a permit portal link', asy
     .locator('article')
     .filter({ has: page.getByRole('heading', { name: 'QA Portal Kitchen Remodel' }) });
   await expect(
-    changedCard.getByRole('link', { name: 'Official City of Tampa Accela record' }),
+    changedCard.getByRole('link', { name: 'Official Florida Accela record' }),
   ).toHaveAttribute('href', secondUrl);
   await changedCard.getByRole('button', { name: 'Edit' }).click();
-  await changedCard.getByLabel('Official City of Tampa Accela Building record URL').fill('');
+  await changedCard.getByLabel('Official Florida Accela Building record URL').fill('');
   await changedCard.getByRole('button', { name: 'Save changes' }).click();
   await expect(changedCard.getByRole('button', { name: 'Edit' })).toBeVisible();
   await expect(
-    changedCard.getByRole('link', { name: 'Official City of Tampa Accela record' }),
+    changedCard.getByRole('link', { name: 'Official Florida Accela record' }),
   ).toHaveCount(0);
   expect((await prisma.permit.findUnique({ where: { id: permit.id } }))?.portalUrl).toBeNull();
 
@@ -199,18 +199,18 @@ test('a team owner can add, change, clear, and reopen a permit portal link', asy
     .locator('article')
     .filter({ has: page.getByRole('heading', { name: 'QA Portal Kitchen Remodel' }) });
   await expect(
-    clearedCard.getByRole('link', { name: 'Official City of Tampa Accela record' }),
+    clearedCard.getByRole('link', { name: 'Official Florida Accela record' }),
   ).toHaveCount(0);
   await clearedCard.getByRole('button', { name: 'Edit' }).click();
   await expect(
-    clearedCard.getByLabel('Official City of Tampa Accela Building record URL'),
+    clearedCard.getByLabel('Official Florida Accela Building record URL'),
   ).toHaveValue('');
 
   // Re-save the sample link so the final review capture visibly includes it.
-  await clearedCard.getByLabel('Official City of Tampa Accela Building record URL').fill(secondUrl);
+  await clearedCard.getByLabel('Official Florida Accela Building record URL').fill(secondUrl);
   await clearedCard.getByRole('button', { name: 'Save changes' }).click();
   await expect(
-    clearedCard.getByRole('link', { name: 'Official City of Tampa Accela record' }),
+    clearedCard.getByRole('link', { name: 'Official Florida Accela record' }),
   ).toHaveAttribute('href', secondUrl);
   expect((await prisma.permit.findUnique({ where: { id: permit.id } }))?.portalUrl).toBe(secondUrl);
 
@@ -282,12 +282,12 @@ test('a team owner can add, change, clear, and reopen a permit portal link', asy
     .locator('article')
     .filter({ has: page.getByRole('heading', { name: 'QA Portal Kitchen Remodel' }) });
   await expect(
-    finalCard.getByRole('link', { name: 'Official City of Tampa Accela record' }),
+    finalCard.getByRole('link', { name: 'Official Florida Accela record' }),
   ).toHaveAttribute('href', secondUrl);
   await capturePortalView(page, testInfo);
   await finalCard.getByRole('button', { name: 'Edit' }).click();
   await expect(
-    finalCard.getByLabel('Official City of Tampa Accela Building record URL'),
+    finalCard.getByLabel('Official Florida Accela Building record URL'),
   ).toHaveValue(secondUrl);
   await expect(finalCard.getByRole('link', { name: 'Open saved City portal link' })).toHaveAttribute(
     'href',
@@ -383,14 +383,14 @@ test('a permit details URL edit preserves manual status history and feeds the ne
   await expect(details).toBeVisible();
   await expect(details.getByText(/saved portal URL is unsupported/i)).toBeVisible();
   await details.getByRole('button', { name: 'Add portal URL' }).click();
-  const portalInput = details.getByLabel('Official City of Tampa Accela Building record URL');
+  const portalInput = details.getByLabel('Official Florida Accela Building record URL');
   await expect(portalInput).toHaveValue(oldUrl);
 
   const unsupportedUrl = 'https://example.invalid.attacker.example/record/2026-070707';
   await portalInput.fill(unsupportedUrl);
   await details.getByRole('button', { name: 'Save portal URL' }).click();
   await expect(details.getByRole('alert')).toContainText(
-    'Enter a direct City of Tampa Building record URL',
+    'Enter a direct Florida Accela Building record URL',
   );
   expect((await prisma.permit.findUnique({ where: { id: permit.id } }))?.portalUrl).toBe(oldUrl);
 
@@ -400,7 +400,7 @@ test('a permit details URL edit preserves manual status history and feeds the ne
   });
   expect(invalidApiResponse.status()).toBe(400);
   expect(await invalidApiResponse.json()).toMatchObject({
-    errors: { portalUrl: expect.stringContaining('direct City of Tampa Building record URL') },
+    errors: { portalUrl: expect.stringContaining('direct Florida Accela Building record URL') },
   });
 
   const crossOriginResponse = await memberPage.request.patch(permitApiUrl, {
@@ -431,7 +431,7 @@ test('a permit details URL edit preserves manual status history and feeds the ne
   });
   await reopenedDetails.getByRole('button', { name: 'Edit portal URL' }).click();
   await expect(
-    reopenedDetails.getByLabel('Official City of Tampa Accela Building record URL'),
+    reopenedDetails.getByLabel('Official Florida Accela Building record URL'),
   ).toHaveValue(newUrl);
 
   const outsiderContext = await browser.newContext();
@@ -473,7 +473,7 @@ test('a permit details URL edit preserves manual status history and feeds the ne
   });
   await permitCard.getByRole('button', { name: 'Run public check' }).click();
   await expect(
-    permitCard.getByRole('link', { name: 'Open City of Tampa source' }).first(),
+    permitCard.getByRole('link', { name: 'Open Florida Accela source' }).first(),
   ).toHaveAttribute('href', newUrl);
   const fetchCalls = (await readFile(FETCH_CALL_LOG_PATH, 'utf8'))
     .trim()
@@ -502,7 +502,7 @@ test('a permit details URL edit preserves manual status history and feeds the ne
   });
   await finalDetails.getByRole('button', { name: 'Edit portal URL' }).click();
   await expect(
-    finalDetails.getByLabel('Official City of Tampa Accela Building record URL'),
+    finalDetails.getByLabel('Official Florida Accela Building record URL'),
   ).toHaveValue(newUrl);
   await capturePortalEditor(memberPage, testInfo);
 });

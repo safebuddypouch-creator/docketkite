@@ -738,7 +738,7 @@ test('the configured owner can test without checkout while customer teams stay g
     subject: `Public permit status changed: ${projectName}`,
   });
   expect(statusEmails[0]?.body).toContain('Detected public status: Awaiting Client Reply');
-  expect(statusEmails[0]?.body).toContain(`Official City of Tampa record: ${portalUrl}`);
+  expect(statusEmails[0]?.body).toContain(`Official Florida Accela record: ${portalUrl}`);
   expect(statusEmails[0]?.body).toContain('1. Review the sample plan note. (North elevation; Plan A2.1)');
 
   const controlMonitor = page.getByRole('region', {

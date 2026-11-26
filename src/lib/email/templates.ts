@@ -173,7 +173,7 @@ export function permitPortalStatusDetectedEmail(input: {
             ...input.correctionChecklist.map((item, index) => `${index + 1}. ${item}`),
           ]
         : ['No confirmed correction-letter checklist is saved for this permit.']),
-      `Official City of Tampa record: ${input.sourceUrl}`,
+      `Official Florida Accela record: ${input.sourceUrl}`,
     ],
     cta: { label: 'Open official City of Tampa record', url: input.sourceUrl },
   });

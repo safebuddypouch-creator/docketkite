@@ -119,7 +119,7 @@ export function parsePermitImportRow(raw: Record<string, string>): RowValidation
       issues: [
         {
           field: 'portal_url',
-          message: 'Every imported permit must include a direct City of Tampa Building record URL.',
+          message: 'Every imported permit must include a direct Florida Accela Building record URL.',
         },
       ],
     };

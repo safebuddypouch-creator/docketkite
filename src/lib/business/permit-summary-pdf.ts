@@ -74,7 +74,7 @@ export function buildPermitSummaryPdf(record: PermitSummaryPdfRecord): PermitSum
       available: false,
       error: 'official_record_link_required',
       message:
-        'Save a direct official City of Tampa Accela Building record URL before downloading this summary.',
+        'Save a direct official Florida Accela Building record URL before downloading this summary.',
     };
   }
 
@@ -108,7 +108,7 @@ export function buildPermitSummaryPdf(record: PermitSummaryPdfRecord): PermitSum
             value: check?.status?.trim() ?? 'No verified result available.',
           },
           { label: 'Check time (UTC)', value: utcLabel(check?.checkedAt ?? null) },
-          { label: 'Official City of Tampa Accela Building record URL', value: officialUrl },
+          { label: 'Official Florida Accela Building record URL', value: officialUrl },
         ],
         fontSize: 10,
         spaceAfter: 18,

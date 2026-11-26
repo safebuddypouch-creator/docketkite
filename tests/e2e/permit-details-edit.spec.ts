@@ -305,7 +305,7 @@ test('paid permit status timeline shows saved events oldest first and leaves por
     await expect(time).toHaveText(visibleTime);
   }
   await expect(
-    page.getByRole('region', { name: 'Latest verified City of Tampa portal result' }),
+    page.getByRole('region', { name: 'Latest verified Florida Accela portal result' }),
   ).toContainText('Finaled');
   await expect(
     page.getByText('Internal note: confirm the revised inspection window with the crew.', {

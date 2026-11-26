@@ -151,7 +151,7 @@ export default function ComparePage() {
             </div>
             <div className="grid gap-3 text-sm leading-6 text-muted-foreground sm:text-base">
               <p>
-                A paid team member can start a check against a saved City of Tampa Accela Building
+                A paid team member can start a check against a saved Florida Accela Building
                 record link. DocketKite stores a raw Record Status only after the page confirms the
                 permit number. Verified status transitions can trigger project-manager email; an
                 interrupted check can trigger team-owner email.
