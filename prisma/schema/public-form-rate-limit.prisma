@@ -1,0 +1,11 @@
+// @polsia:user-owned — shared counters for public contact/waitlist abuse caps.
+// Survives multi-instance deploys (in-memory Maps do not).
+
+model PublicFormRateLimit {
+  key         String   @id @db.VarChar(190)
+  count       Int
+  windowStart DateTime
+  updatedAt   DateTime @updatedAt
+
+  @@map("public_form_rate_limit")
+}

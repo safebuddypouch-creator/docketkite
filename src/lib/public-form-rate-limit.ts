@@ -1,17 +1,6 @@
-// @polsia:user-owned — in-process IP throttle for public contact/waitlist POSTs.
+// @polsia:user-owned — Postgres-backed throttle for public contact/waitlist POSTs.
 import 'server-only';
-
-type Bucket = { count: number; resetAt: number };
-
-const buckets = new Map<string, Bucket>();
-
-/** Drop stale buckets occasionally so the map cannot grow without bound. */
-function prune(now: number) {
-  if (buckets.size < 2_000) return;
-  for (const [key, bucket] of buckets) {
-    if (bucket.resetAt <= now) buckets.delete(key);
-  }
-}
+import { prisma } from '@/lib/db';
 
 /**
  * Client IP for rate limiting. Prefers the first X-Forwarded-For hop (platform
@@ -30,25 +19,49 @@ export function clientIp(request: Request): string {
 
 /**
  * Returns true when this key has already used `max` hits inside `windowMs`.
- * The current call counts toward the window.
+ * Counters live in Postgres so every instance shares the same budget.
+ * On DB failure, fail closed (treat as limited) so public forms cannot burn
+ * email/API quota while the limiter is down.
  */
-export function isRateLimited(
+export async function isRateLimited(
   key: string,
   max: number,
   windowMs: number,
   now = Date.now(),
-): boolean {
-  prune(now);
-  const current = buckets.get(key);
-  if (!current || current.resetAt <= now) {
-    buckets.set(key, { count: 1, resetAt: now + windowMs });
-    return false;
+): Promise<boolean> {
+  const safeKey = key.slice(0, 190);
+  const windowStart = new Date(now);
+
+  try {
+    return await prisma.$transaction(async (tx) => {
+      const existing = await tx.publicFormRateLimit.findUnique({ where: { key: safeKey } });
+      if (!existing || existing.windowStart.getTime() + windowMs <= now) {
+        await tx.publicFormRateLimit.upsert({
+          where: { key: safeKey },
+          create: { key: safeKey, count: 1, windowStart },
+          update: { count: 1, windowStart },
+        });
+        return false;
+      }
+      if (existing.count >= max) {
+        return true;
+      }
+      const updated = await tx.publicFormRateLimit.update({
+        where: { key: safeKey },
+        data: { count: { increment: 1 } },
+      });
+      return updated.count > max;
+    });
+  } catch {
+    return true;
   }
-  current.count += 1;
-  return current.count > max;
 }
 
-/** Test helper — clears all buckets. */
-export function resetPublicFormRateLimits() {
-  buckets.clear();
+/** Test helper — clears all buckets when a DB is available. */
+export async function resetPublicFormRateLimits() {
+  try {
+    await prisma.publicFormRateLimit.deleteMany();
+  } catch {
+    // Unit tests without a DB ignore this.
+  }
 }

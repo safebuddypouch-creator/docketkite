@@ -40,8 +40,12 @@ export async function POST(req: Request) {
   }
 
   if (
-    isRateLimited(`waitlist:${clientIp(req)}`, WAITLIST_MAX_PER_WINDOW, WAITLIST_WINDOW_MS) ||
-    isRateLimited('waitlist:global', WAITLIST_GLOBAL_MAX, WAITLIST_GLOBAL_WINDOW_MS)
+    (await isRateLimited(
+      `waitlist:${clientIp(req)}`,
+      WAITLIST_MAX_PER_WINDOW,
+      WAITLIST_WINDOW_MS,
+    )) ||
+    (await isRateLimited('waitlist:global', WAITLIST_GLOBAL_MAX, WAITLIST_GLOBAL_WINDOW_MS))
   ) {
     return NextResponse.json(
       { errors: { email: 'Too many signups from this network. Please try again later.' } },

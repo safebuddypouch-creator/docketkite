@@ -24,7 +24,10 @@ export async function GET(request: Request) {
   }
 
   return NextResponse.json({
-    eligible: ownerAccessEligible(user.email) && user.role !== 'admin',
+    eligible:
+      Boolean(user.emailVerified) &&
+      ownerAccessEligible(user.email) &&
+      user.role !== 'admin',
   });
 }
 
@@ -55,6 +58,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'owner_access_rate_limited' }, { status: 429 });
   }
 
+  // Claiming the owner address is not enough — the mailbox must be verified.
+  if (!user.emailVerified) {
+    return NextResponse.json({ error: 'owner_access_email_unverified' }, { status: 403 });
+  }
+
   if (!ownerAccessCodeConfigured()) {
     return NextResponse.json({ error: 'owner_access_unconfigured' }, { status: 503 });
   }
@@ -68,6 +76,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'owner_access_denied' }, { status: 403 });
   }
 
-  await prisma.user.update({ where: { id: user.id }, data: { role: 'admin' } });
+  // Re-check verification in the write so a stale session cookie cannot promote.
+  const promoted = await prisma.user.updateMany({
+    where: { id: user.id, email: user.email, emailVerified: true },
+    data: { role: 'admin' },
+  });
+  if (promoted.count === 0) {
+    return NextResponse.json({ error: 'owner_access_email_unverified' }, { status: 403 });
+  }
   return NextResponse.json({ ok: true, role: 'admin' });
 }
