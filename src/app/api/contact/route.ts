@@ -17,13 +17,25 @@ import { deliverEmail } from '@/lib/email/deliver';
 import { recordSubmission } from '@/lib/email/submissions';
 import { notificationEmail } from '@/lib/email/templates';
 import { env } from '@/lib/env';
+import { clientIp, isRateLimited } from '@/lib/public-form-rate-limit';
 import { sameOrigin } from '@/lib/same-origin';
 
 export const dynamic = 'force-dynamic';
 
+/** Per-IP cap before Postgres write / email / Polsia submission fan-out. */
+const CONTACT_MAX_PER_WINDOW = 5;
+const CONTACT_WINDOW_MS = 15 * 60 * 1000;
+
 export async function POST(req: Request) {
   if (!sameOrigin(req)) {
     return NextResponse.json({ error: 'forbidden_origin' }, { status: 403 });
+  }
+
+  if (isRateLimited(`contact:${clientIp(req)}`, CONTACT_MAX_PER_WINDOW, CONTACT_WINDOW_MS)) {
+    return NextResponse.json(
+      { errors: { form: 'Too many messages. Please try again later.' } },
+      { status: 429 },
+    );
   }
 
   const body: unknown = await req.json().catch(() => null);

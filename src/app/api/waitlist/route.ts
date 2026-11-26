@@ -21,14 +21,26 @@ import { deliverEmail } from '@/lib/email/deliver';
 import { recordSubmission } from '@/lib/email/submissions';
 import { notificationEmail } from '@/lib/email/templates';
 import { env } from '@/lib/env';
+import { clientIp, isRateLimited } from '@/lib/public-form-rate-limit';
 import { sameOrigin } from '@/lib/same-origin';
 import { waitlistSchema } from '@/lib/waitlist/schema';
 
 export const dynamic = 'force-dynamic';
 
+/** Per-IP cap before Postgres write / email / Polsia submission fan-out. */
+const WAITLIST_MAX_PER_WINDOW = 5;
+const WAITLIST_WINDOW_MS = 15 * 60 * 1000;
+
 export async function POST(req: Request) {
   if (!sameOrigin(req)) {
     return NextResponse.json({ error: 'forbidden_origin' }, { status: 403 });
+  }
+
+  if (isRateLimited(`waitlist:${clientIp(req)}`, WAITLIST_MAX_PER_WINDOW, WAITLIST_WINDOW_MS)) {
+    return NextResponse.json(
+      { errors: { email: 'Too many signups from this network. Please try again later.' } },
+      { status: 429 },
+    );
   }
 
   const body = await req.json();

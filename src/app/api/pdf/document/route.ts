@@ -22,6 +22,7 @@ import {
 import { loadPdfFonts } from '@/lib/pdf/font-config';
 import { documentSpecSchema } from '@/lib/pdf/schema';
 import { requireAuth } from '@/lib/require-auth';
+import { sameOrigin } from '@/lib/same-origin';
 
 export const dynamic = 'force-dynamic';
 
@@ -64,6 +65,10 @@ async function readCappedBody(req: Request): Promise<string | null> {
 }
 
 export async function POST(req: Request) {
+  if (!sameOrigin(req)) {
+    return NextResponse.json({ error: 'forbidden_origin' }, { status: 403 });
+  }
+
   try {
     await requireAuth(req);
   } catch (response) {
