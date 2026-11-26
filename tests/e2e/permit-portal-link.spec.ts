@@ -332,7 +332,7 @@ test('a permit details URL edit preserves manual status history and feeds the ne
   });
 
   const permitNumber = '2026-070707';
-  const oldUrl = `https://permits.sanjoseca.gov/record/${permitNumber}?source=old`;
+  const oldUrl = `https://example.invalid/record/${permitNumber}?source=old`;
   const newUrl = tampaRecordUrl(permitNumber, { source: 'updated', fixture: `permit-link-${permitNumber}` });
   const permit = await prisma.permit.create({
     data: {
@@ -381,12 +381,12 @@ test('a permit details URL edit preserves manual status history and feeds the ne
     has: memberPage.getByRole('heading', { name: 'QA Permit Details Kitchen Remodel' }),
   });
   await expect(details).toBeVisible();
-  await expect(details.getByText(/historical San José link is retained/i)).toBeVisible();
+  await expect(details.getByText(/saved portal URL is unsupported/i)).toBeVisible();
   await details.getByRole('button', { name: 'Add portal URL' }).click();
   const portalInput = details.getByLabel('Official City of Tampa Accela Building record URL');
   await expect(portalInput).toHaveValue(oldUrl);
 
-  const unsupportedUrl = 'https://sanjoseca.gov.attacker.example/record/2026-070707';
+  const unsupportedUrl = 'https://example.invalid.attacker.example/record/2026-070707';
   await portalInput.fill(unsupportedUrl);
   await details.getByRole('button', { name: 'Save portal URL' }).click();
   await expect(details.getByRole('alert')).toContainText(

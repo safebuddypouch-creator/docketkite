@@ -40,7 +40,7 @@ const invalidCsv =
   `Kitchen remodel,"101 Sample Street, Tampa, FL 33602",${importPermitNumber},Building,Planning,Sample only,${importPortalUrl}\n` +
   `Bathroom addition,"102 Sample Street, Tampa, FL 33602",${importPermitNumber}-2,Solar,Planning,Sample only,${tampaRecordUrl(`${importPermitNumber}-2`)}\n` +
   `Garage conversion,"103 Sample Street, Tampa, FL 33602",${importPermitNumber}-3,Building,Planning,Sample only,\n` +
-  `Garage conversion,"103 Sample Street, Tampa, FL 33602",${importPermitNumber}-4,Building,Planning,Sample only,https://sanjoseca.gov/about\n` +
+  `Garage conversion,"103 Sample Street, Tampa, FL 33602",${importPermitNumber}-4,Building,Planning,Sample only,https://example.invalid/about\n` +
   `Basement remodel,"104 Sample Street, Tampa, FL 33602",${importPermitNumber}-5,Building,Planning,Sample only,https://aca-prod.accela.com/TAMPA/Cap/CapHome.aspx?TabName=Building&module=Building\n`;
 
 interface SessionResponse {

@@ -17,17 +17,17 @@ describe('permit portal page retrieval guard', () => {
     '',
     'not a URL',
     'http://aca-prod.accela.com/TAMPA/Cap/CapDetail.aspx?Module=Building&capID1=26CAP&capID2=00000&capID3=02UTH&agencyCode=TAMPA',
-    'https://permits.sanjoseca.gov/record/2026-040404',
+    'https://example.invalid/record/2026-040404',
     'https://aca-prod.accela.com/HILLSBOROUGH/Cap/CapDetail.aspx?Module=Building&capID1=26CAP&capID2=00000&capID3=02UTH&agencyCode=HILLSBOROUGH',
     'https://aca-prod.accela.com/TAMPA/Cap/CapHome.aspx?TabName=Building&module=Building',
     'https://third-party.example/record/2026-040404',
-    'https://sanjoseca.gov.attacker.example/permit/2026-040404',
+    'https://example.invalid.attacker.example/permit/2026-040404',
     'https://user:password@aca-prod.accela.com/TAMPA/Cap/CapDetail.aspx?Module=Building&capID1=26CAP&capID2=00000&capID3=02UTH&agencyCode=TAMPA',
     'https://aca-prod.accela.com:8443/TAMPA/Cap/CapDetail.aspx?Module=Building&capID1=26CAP&capID2=00000&capID3=02UTH&agencyCode=TAMPA',
     ' https://aca-prod.accela.com/TAMPA/Cap/CapDetail.aspx?Module=Building&capID1=26CAP&capID2=00000&capID3=02UTH&agencyCode=TAMPA',
     'https://aca-prod.accela.com/TAMPA/Cap/CapDetail.aspx?Module=Building&capID1=26CAP&capID2=00000&capID3=02UTH&agencyCode=TAMPA ',
     'https://aca-prod.accela.com/TAMPA/Cap/CapDetail.aspx?Module=Building&capID1=26CAP&capID2=00000&capID3=%zz&agencyCode=TAMPA',
-    'https://sanjoseca..gov/record/2026-040404',
+    'https://example..invalid/record/2026-040404',
   ])('rejects unsupported saved URL %s without calling the page retriever', async (savedUrl) => {
     const fetcher = vi.fn(async () => SAMPLE_PAGE);
 

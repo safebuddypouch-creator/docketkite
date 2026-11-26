@@ -119,7 +119,7 @@ describe('permit watcher health load state', () => {
         <PermitPortalMonitor
           permitId="permit-1"
           permitNumber="2026-010101"
-          portalUrl="https://permits.sanjoseca.gov/search/"
+          portalUrl="https://example.invalid/search/"
           teamId="team-1"
           archived={false}
         />,

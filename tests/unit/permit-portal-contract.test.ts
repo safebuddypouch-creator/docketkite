@@ -3,7 +3,6 @@
 import { describe, expect, it } from 'vitest';
 import {
   getOfficialPermitPortalUrl,
-  isHistoricalSanJosePortalUrl,
   PermitCreate,
   PermitCreateFields,
   PermitFields,
@@ -83,8 +82,8 @@ describe('City of Tampa permit portal URL contract', () => {
 
   it('rejects other jurisdictions, portal landing/search pages, malformed links, and forged hosts', () => {
     for (const portalUrl of [
-      'https://permits.sanjoseca.gov/record/2026-010101',
-      'https://sjpermits.org/record/2026-010101',
+      'https://permits.example.invalid/record/2026-010101',
+      'https://records.example.invalid/record/2026-010101',
       'https://aca-prod.accela.com/HILLSBOROUGH/Cap/CapDetail.aspx?Module=Building&capID1=26CAP&capID2=00000&capID3=02UTH&agencyCode=HILLSBOROUGH',
       'https://aca-prod.accela.com/TAMPA/Cap/CapHome.aspx?TabName=Building&module=Building',
       'https://aca-prod.accela.com/TAMPA/Cap/CapDetail.aspx?Module=Building&capID1=26CAP&capID2=00000&capID3=02UTH&agencyCode=OTHER',
@@ -101,8 +100,8 @@ describe('City of Tampa permit portal URL contract', () => {
     }
   });
 
-  it('keeps historical links loadable while excluding them from active coverage', () => {
-    const oldLink = 'https://permits.sanjoseca.gov/record/2026-010101';
+  it('keeps unsupported saved links loadable while excluding them from active coverage', () => {
+    const oldLink = 'https://permits.example.invalid/record/2026-010101';
     const legacyPermit = {
       ...requiredFields,
       id: 'legacy-1',
@@ -113,8 +112,7 @@ describe('City of Tampa permit portal URL contract', () => {
     expect(PermitFields.shape.portalUrl.safeParse(oldLink).success).toBe(false);
     expect(PermitItem.shape.portalUrl.parse(oldLink)).toBe(oldLink);
     expect(getOfficialPermitPortalUrl(oldLink)).toBeNull();
-    expect(isHistoricalSanJosePortalUrl(oldLink)).toBe(true);
-    expect(isHistoricalSanJosePortalUrl(tampaRecordUrl)).toBe(false);
+    expect(getOfficialPermitPortalUrl(tampaRecordUrl)).toBe(tampaRecordUrl);
     expect(getOfficialPermitPortalUrl(` ${tampaRecordUrl}`)).toBeNull();
     expect(getOfficialPermitPortalUrl(`${tampaRecordUrl} `)).toBeNull();
     expect(PermitItem.shape.portalUrl.parse(legacyPermit.portalUrl)).toBe(oldLink);
@@ -122,7 +120,7 @@ describe('City of Tampa permit portal URL contract', () => {
 
   it('requires the same direct Tampa record link when repairing a saved portal URL', () => {
     expect(PermitPortalUrlUpdate.safeParse({ portalUrl: tampaRecordUrl }).success).toBe(true);
-    for (const portalUrl of ['', 'https://sjpermits.org/record/2026-010101']) {
+    for (const portalUrl of ['', 'https://records.example.invalid/record/2026-010101']) {
       const parsed = PermitPortalUrlUpdate.safeParse({ portalUrl });
       expect(parsed.success).toBe(false);
       if (!parsed.success) {

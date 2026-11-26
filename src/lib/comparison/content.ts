@@ -31,7 +31,7 @@ export const comparisonContent: ComparisonContent = {
           values: {
             'tampa-accela': 'City of Tampa municipal records in the TAMPA Accela agency.',
             docketkite:
-              'Only direct City of Tampa Accela Building record URLs are accepted for active checks. San José, Hillsborough County, nearby municipalities, and broader Tampa-area coverage are unsupported.',
+              'Only direct City of Tampa Accela Building record URLs are accepted for active checks. Hillsborough County, nearby municipalities, and broader Tampa-area coverage are unsupported.',
           },
         },
         {

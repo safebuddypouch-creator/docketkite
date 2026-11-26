@@ -611,7 +611,7 @@ test('permit search composes with team, Active or Archived, and Assigned to me s
       teamId: team.id,
       projectName: 'QA Willow Kitchen',
       address: '101 Willow Avenue, Tampa',
-      permitNumber: 'SJ-25-001',
+      permitNumber: 'BLD-25-001',
       permitType: 'Building',
       status: 'Under review',
       notes: '',
@@ -624,7 +624,7 @@ test('permit search composes with team, Active or Archived, and Assigned to me s
       teamId: team.id,
       projectName: 'QA Mission Bathroom',
       address: '202 Mission Street, Tampa',
-      permitNumber: 'SJ-25-002',
+      permitNumber: 'BLD-25-002',
       permitType: 'Building',
       status: 'Planning',
       notes: '',
@@ -636,7 +636,7 @@ test('permit search composes with team, Active or Archived, and Assigned to me s
       teamId: team.id,
       projectName: 'QA Archived Remodel',
       address: '303 Archive Lane, Tampa',
-      permitNumber: 'SJ-24-003',
+      permitNumber: 'BLD-24-003',
       permitType: 'Building',
       status: 'Issued',
       notes: '',
@@ -658,7 +658,7 @@ test('permit search composes with team, Active or Archived, and Assigned to me s
       teamId: otherTeam.id,
       projectName: 'QA Other Team Willow Kitchen',
       address: '101 Willow Avenue, Tampa',
-      permitNumber: 'SJ-25-001',
+      permitNumber: 'BLD-25-001',
       permitType: 'Building',
       status: 'Planning',
       notes: '',
@@ -667,7 +667,7 @@ test('permit search composes with team, Active or Archived, and Assigned to me s
 
   const teamQuery = `teamId=${encodeURIComponent(team.id)}`;
   const numberSearch = await ownerPage.request.get(
-    `${origin}/api/permits?${teamQuery}&view=active&status=Under%20review&search=sj-25-00`,
+    `${origin}/api/permits?${teamQuery}&view=active&status=Under%20review&search=bld-25-00`,
   );
   expect(numberSearch.status()).toBe(200);
   const numberSearchItems = ((await numberSearch.json()) as { items: { id: string }[] }).items;
@@ -691,7 +691,7 @@ test('permit search composes with team, Active or Archived, and Assigned to me s
   ]);
 
   const assignedSearch = await managerPage.request.get(
-    `${origin}/api/permits?${teamQuery}&view=active&assignedToMe=true&userId=${encodeURIComponent(owner.userId)}&search=SJ-25`,
+    `${origin}/api/permits?${teamQuery}&view=active&assignedToMe=true&userId=${encodeURIComponent(owner.userId)}&search=BLD-25`,
   );
   expect(assignedSearch.status()).toBe(200);
   expect(((await assignedSearch.json()) as { items: { id: string }[] }).items.map((item) => item.id)).toEqual([
@@ -710,19 +710,19 @@ test('permit search composes with team, Active or Archived, and Assigned to me s
   fixtureContexts.push(anonymousContext);
   const anonymousPage = await anonymousContext.newPage();
   const anonymousSearch = await anonymousPage.request.get(
-    `${origin}/api/permits?${teamQuery}&search=SJ-25-001`,
+    `${origin}/api/permits?${teamQuery}&search=BLD-25-001`,
   );
   expect(anonymousSearch.status()).toBe(401);
   expect((await anonymousSearch.json()).items).toBeUndefined();
 
   const nonMemberSearch = await outsiderPage.request.get(
-    `${origin}/api/permits?${teamQuery}&search=SJ-25-001`,
+    `${origin}/api/permits?${teamQuery}&search=BLD-25-001`,
   );
   expect(nonMemberSearch.status()).toBe(403);
   expect((await nonMemberSearch.json()).items).toBeUndefined();
 
   const otherTeamSearch = await ownerPage.request.get(
-    `${origin}/api/permits?teamId=${encodeURIComponent(otherTeam.id)}&search=SJ-25-001`,
+    `${origin}/api/permits?teamId=${encodeURIComponent(otherTeam.id)}&search=BLD-25-001`,
   );
   expect(otherTeamSearch.status()).toBe(403);
   expect((await otherTeamSearch.json()).items).toBeUndefined();
