@@ -1,7 +1,6 @@
 // @polsia:user-owned — paid-team access to the original permit letter.
 import 'server-only';
 import { NextResponse } from 'next/server';
-import { isAllowedLegacyLetterSourceUrl } from '@/lib/business/legacy-letter-source-url';
 import { readStoredUploadBytes } from '@/lib/business/stored-upload';
 import {
   MAX_CORRECTION_LETTER_SIZE_BYTES,
@@ -46,7 +45,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ lett
       teamId: input.data.teamId,
       permitId: input.data.permitId,
     },
-    select: { uploadId: true, fileUrl: true, fileName: true, mimeType: true, size: true },
+    select: { uploadId: true, size: true },
   });
   if (!letter) return NextResponse.json({ error: 'permit_letter_not_found' }, { status: 404 });
   if (letter.size > MAX_CORRECTION_LETTER_SIZE_BYTES) {
@@ -68,33 +67,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ lett
     return new Response(new Uint8Array(stored.bytes), { headers });
   }
 
-  // Legacy letters uploaded through Polsia R2 before local storage.
-  // Allowlist only R2 (and the deploy's configured R2 base) — never arbitrary HTTPS.
-  if (!isAllowedLegacyLetterSourceUrl(letter.fileUrl)) {
-    return unavailable();
-  }
-  const sourceUrl = new URL(letter.fileUrl);
-
-  let source: Response;
-  try {
-    source = await fetch(sourceUrl, {
-      cache: 'no-store',
-      redirect: 'error',
-      signal: AbortSignal.timeout(15_000),
-    });
-  } catch {
-    return unavailable();
-  }
-  if (!source.ok || !source.body) return unavailable();
-
-  const headers = new Headers({
-    'cache-control': 'private, no-store',
-    'content-disposition': `inline; filename*=UTF-8''${encodeURIComponent(letter.fileName)}`,
-    'content-type': letter.mimeType,
-    'referrer-policy': 'no-referrer',
-    'x-content-type-options': 'nosniff',
-    'x-frame-options': 'DENY',
-    'content-security-policy': "frame-ancestors 'none'",
-  });
-  return new Response(source.body, { headers });
+  // Letters live in Postgres. Do not fetch letter.fileUrl: a stored https URL
+  // would let a member steer the server at another host.
+  return unavailable();
 }
