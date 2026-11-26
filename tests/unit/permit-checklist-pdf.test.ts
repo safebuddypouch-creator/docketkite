@@ -6,7 +6,7 @@ import { blockDocumentSpecSchema } from '@/lib/pdf/schema';
 describe('buildPermitChecklistPdfSpec', () => {
   it('preserves permit, source, generation time, checklist order and saved completion state', () => {
     const spec = buildPermitChecklistPdfSpec({
-      permitReference: 'SJ-2026-0042',
+      permitReference: 'BLD-2026-0042',
       sourceFileName: 'correction-letter.pdf',
       generatedAt: new Date('2026-10-31T12:34:56.000Z'),
       items: [
@@ -31,7 +31,7 @@ describe('buildPermitChecklistPdfSpec', () => {
     expect(permitDetails).toMatchObject({
       type: 'keyValue',
       rows: [
-        { label: 'Permit reference', value: 'SJ-2026-0042' },
+        { label: 'Permit reference', value: 'BLD-2026-0042' },
         { label: 'Source letter', value: 'correction-letter.pdf' },
         { label: 'Generated at (UTC)', value: '2026-10-31T12:34:56.000Z' },
       ],
@@ -48,7 +48,7 @@ describe('buildPermitChecklistPdfSpec', () => {
 
   it('keeps a readable empty state if a saved checklist has no items', () => {
     const spec = buildPermitChecklistPdfSpec({
-      permitReference: 'SJ-2026-0043',
+      permitReference: 'BLD-2026-0043',
       sourceFileName: 'source-letter.pdf',
       generatedAt: new Date('2026-10-31T12:34:56.000Z'),
       items: [],

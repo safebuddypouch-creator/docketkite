@@ -449,7 +449,7 @@ test('paid team members can check a public City status and retain a separate man
       permitId: legacyPermit.id,
       teamId: team.id,
       permitNumber: legacyPermit.permitNumber,
-      sourceUrl: 'https://permits.sanjoseca.gov/legacy/2025-020202',
+      sourceUrl: 'https://example.invalid/legacy/2025-020202',
       status: 'Technical Review',
       result: 'checked',
       checkedAt: legacySuccessfulCheckAt,
@@ -938,7 +938,7 @@ test('Run public check explains unsupported saved links without changing permit 
   const lastSuccessfulPortalCheckAt = new Date('2026-10-01T03:00:00.000Z');
   const portalMonitoringInterruptedAt = new Date('2026-10-02T03:00:00.000Z');
   const portalMonitoringReason = 'Existing public portal retrieval interruption.';
-  const invalidPortalUrl = 'https://permits.sanjoseca.gov/record/2026-040404';
+  const invalidPortalUrl = 'https://example.invalid/record/2026-040404';
   const permit = await prisma.permit.create({
     data: {
       userId,
@@ -969,7 +969,7 @@ test('Run public check explains unsupported saved links without changing permit 
         permitId: permit.id,
         teamId: team.id,
         permitNumber: permit.permitNumber,
-        sourceUrl: 'https://permits.sanjoseca.gov/record/2026-040404',
+        sourceUrl: 'https://example.invalid/record/2026-040404',
         status: 'Technical Review',
         result: 'checked',
         checkedAt: lastSuccessfulPortalCheckAt,
@@ -980,7 +980,7 @@ test('Run public check explains unsupported saved links without changing permit 
         permitId: permit.id,
         teamId: team.id,
         permitNumber: permit.permitNumber,
-        sourceUrl: 'https://permits.sanjoseca.gov/record/2026-040404',
+        sourceUrl: 'https://example.invalid/record/2026-040404',
         status: null,
         result: 'unavailable',
         message: portalMonitoringReason,
@@ -1021,8 +1021,10 @@ test('Run public check explains unsupported saved links without changing permit 
     message:
       'This saved link is outside active City of Tampa coverage. Edit the permit and save its direct record URL from the official City of Tampa Accela portal before checking it.',
   });
-  const historicalNote = permitCard.getByText(/San José record and its check history are retained/i);
-  await expect(historicalNote).toBeVisible();
+  const unsupportedNote = permitCard.getByText(
+    /direct City of Tampa Building Accela record URL under Edit/i,
+  );
+  await expect(unsupportedNote).toBeVisible();
 
   expect(await prisma.permit.findUnique({ where: { id: permit.id } })).toEqual(permitBefore);
   expect(
@@ -1050,12 +1052,12 @@ test('Run public check explains unsupported saved links without changing permit 
     { name: 'mobile-320', width: 320, height: 844 },
   ]) {
     await page.setViewportSize({ width: viewport.width, height: viewport.height });
-    await historicalNote.scrollIntoViewIfNeeded();
+    await unsupportedNote.scrollIntoViewIfNeeded();
     await page.screenshot({ path: testInfo.outputPath(`unsupported-portal-${viewport.name}.png`) });
   }
 });
 
-test('status-change summaries include active Tampa records and omit historical San José records', async ({
+test('status-change summaries include active Tampa records and omit unsupported saved records', async ({
   browser,
   baseURL,
 }) => {
@@ -1118,8 +1120,8 @@ test('status-change summaries include active Tampa records and omit historical S
     statuses: ['In Process', 'Awaiting Client Reply'],
   });
   const historicalPermit = await createRecord({
-    permitNumber: 'LEGACY-SJ-0529173',
-    portalUrl: 'https://permits.sanjoseca.gov/record/LEGACY-SJ-0529173',
+    permitNumber: 'LEGACY-BLD-0529173',
+    portalUrl: 'https://example.invalid/record/LEGACY-BLD-0529173',
     statuses: ['In Review', 'Corrections'],
   });
   const archivedPermit = await createRecord({

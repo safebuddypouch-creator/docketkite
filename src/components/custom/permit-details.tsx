@@ -14,7 +14,6 @@ import { Input } from '@/components/ui/input';
 import { apiFetch } from '@/lib/api-client';
 import {
   getOfficialPermitPortalUrl,
-  isHistoricalSanJosePortalUrl,
   PermitDetailsMutationResponse,
   type PermitDetailsPage,
   PermitDetailsPage as PermitDetailsPageSchema,
@@ -345,9 +344,7 @@ export function PermitDetails({ permitId }: { permitId: string }) {
           ) : (
             <p className="text-sm text-muted-foreground">
               {permit.portalUrl
-                ? isHistoricalSanJosePortalUrl(permit.portalUrl)
-                  ? 'This historical San José link is retained, but San José is no longer active coverage. Save a City of Tampa Accela Building record URL to enable checks.'
-                  : 'The saved portal URL is unsupported. Update it to a direct City of Tampa Accela Building record URL.'
+                ? 'The saved portal URL is unsupported. Update it to a direct City of Tampa Accela Building record URL.'
                 : 'Add a direct public City record URL to enable public-record checks.'}
             </p>
           )}

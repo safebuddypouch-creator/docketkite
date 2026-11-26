@@ -27,7 +27,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { apiFetch } from '@/lib/api-client';
 import {
   getOfficialPermitPortalUrl,
-  isHistoricalSanJosePortalUrl,
   PermitBulkArchiveResponse as PermitBulkArchiveResponseSchema,
   type PermitCreateFieldsInput,
   PermitCreateFields as PermitCreateFieldsSchema,
@@ -467,13 +466,7 @@ function PermitCard({
             </p>
             <h2 className="mt-1 text-lg font-semibold">{permit.projectName}</h2>
           </div>
-          <Badge variant="outline">
-            {officialPortalUrl
-              ? 'City of Tampa'
-              : isHistoricalSanJosePortalUrl(permit.portalUrl)
-                ? 'Historical San José · unsupported'
-                : 'Not monitored'}
-          </Badge>
+          <Badge variant="outline">{officialPortalUrl ? 'City of Tampa' : 'Not monitored'}</Badge>
         </div>
         <PermitEditor
           initialValues={{
@@ -509,13 +502,7 @@ function PermitCard({
             <h2 className="break-words text-lg font-semibold tracking-tight text-foreground">
               {permit.projectName}
             </h2>
-            <Badge variant="outline">
-              {officialPortalUrl
-                ? 'City of Tampa'
-                : isHistoricalSanJosePortalUrl(permit.portalUrl)
-                  ? 'Historical San José · unsupported'
-                  : 'Not monitored'}
-            </Badge>
+            <Badge variant="outline">{officialPortalUrl ? 'City of Tampa' : 'Not monitored'}</Badge>
             <Badge variant={permit.status === 'Issued' ? 'default' : 'secondary'}>
               {permit.status}
             </Badge>

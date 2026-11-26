@@ -103,8 +103,8 @@ describe('permit CSV rows', () => {
       'https://aca-prod.accela.com/TAMPA/Cap/CapDetail.aspx?Module=Building&TabName=Building&capID1=26CAP&capID2=00000&capID3=02UTH&agencyCode=TAMPA';
     expect(parsePermitImportRow({ ...validRow, portal_url: tampaRecordUrl }).ok).toBe(true);
     for (const portalUrl of [
-      'https://permits.sanjoseca.gov/record/2019-010101',
-      'https://sjpermits.org/record/2019-010101',
+      'https://permits.example.invalid/record/2019-010101',
+      'https://records.example.invalid/record/2019-010101',
       'https://aca-prod.accela.com/HILLSBOROUGH/Cap/CapDetail.aspx?Module=Building&capID1=26CAP&capID2=00000&capID3=02UTH&agencyCode=HILLSBOROUGH',
       'https://aca-prod.accela.com/TAMPA/Cap/CapHome.aspx?TabName=Building&module=Building',
       'https://aca-prod.accela.com/TAMPA/Cap/CapDetail.aspx?Module=Building&capID1=26CAP&capID2=00000&capID3=02UTH&agencyCode=OTHER',

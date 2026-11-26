@@ -92,25 +92,6 @@ export function getOfficialPermitPortalUrl(value: string): string | null {
   return parsed.success && parsed.data === value ? parsed.data : null;
 }
 
-/** Legacy San José URLs remain stored for history, but are never active coverage. */
-export function isHistoricalSanJosePortalUrl(value: string): boolean {
-  try {
-    const url = new URL(value);
-    const hostname = url.hostname.toLowerCase();
-    return (
-      url.protocol === 'https:' &&
-      !url.username &&
-      !url.password &&
-      (hostname === 'sanjoseca.gov' ||
-        hostname.endsWith('.sanjoseca.gov') ||
-        hostname === 'sjpermits.org' ||
-        hostname.endsWith('.sjpermits.org'))
-    );
-  } catch {
-    return false;
-  }
-}
-
 export const PermitType = z.enum(['Building', 'Electrical', 'Plumbing', 'Mechanical', 'Other']);
 export const PermitStatus = z.enum([
   'Planning',

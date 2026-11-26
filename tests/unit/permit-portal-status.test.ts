@@ -164,7 +164,7 @@ describe('public City of Tampa permit status extraction', () => {
         'https://aca-prod.accela.com/TAMPA/Cap/CapDetail.aspx?Module=Building&capID1=26CAP&capID2=00000&capID3=02UTH&agencyCode=TAMPA',
       ).success,
     ).toBe(true);
-    expect(PermitPortalUrl.safeParse('https://permits.sanjoseca.gov/search/').success).toBe(false);
+    expect(PermitPortalUrl.safeParse('https://example.invalid/search/').success).toBe(false);
     expect(
       PermitPortalUrl.safeParse(
         'https://aca-prod.accela.com/HILLSBOROUGH/Cap/CapDetail.aspx?Module=Building&capID1=26CAP&capID2=00000&capID3=02UTH&agencyCode=HILLSBOROUGH',

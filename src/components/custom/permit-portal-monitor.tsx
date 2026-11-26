@@ -4,7 +4,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { apiFetch } from '@/lib/api-client';
-import { getOfficialPermitPortalUrl, isHistoricalSanJosePortalUrl } from '@/lib/contracts/permit';
+import { getOfficialPermitPortalUrl } from '@/lib/contracts/permit';
 import {
   type PermitPortalCheckItem,
   PermitPortalCheckList,
@@ -62,7 +62,6 @@ export function PermitPortalMonitor({
   const [actionError, setActionError] = useState('');
   const tampaPortalUrl = getOfficialPermitPortalUrl(portalUrl);
   const ready = Boolean(permitNumber.trim() && tampaPortalUrl);
-  const historicalSanJose = isHistoricalSanJosePortalUrl(portalUrl);
   const query = new URLSearchParams({ permitId, teamId }).toString();
   const latestCheck = checks?.[0] ?? null;
   const retryingFailure = latestCheck !== null && latestCheck.result !== 'checked';
@@ -133,11 +132,9 @@ export function PermitPortalMonitor({
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">
             {tampaPortalUrl
               ? 'City of Tampa · public record'
-              : historicalSanJose
-                ? 'Historical San José record · monitoring retired'
-                : portalUrl
-                  ? 'Unsupported portal link · not monitored'
-                  : 'No public record link'}
+              : portalUrl
+                ? 'Unsupported portal link · not monitored'
+                : 'No public record link'}
           </p>
           <h3 className="mt-1 text-base font-semibold text-foreground">Watcher health</h3>
           <p className="mt-1 max-w-2xl text-xs leading-5 text-muted-foreground">
@@ -312,9 +309,8 @@ export function PermitPortalMonitor({
 
       {!ready ? (
         <p className="rounded-lg border border-dashed border-border bg-background/70 px-3 py-3 text-sm text-muted-foreground">
-          {historicalSanJose
-            ? 'This San José record and its check history are retained for reference. San José is no longer supported for active checks; save a City of Tampa Accela record link to use public checks.'
-            : 'Add the permit number and its direct City of Tampa Building Accela record URL under Edit to enable an on-demand public check.'}
+          Add the permit number and its direct City of Tampa Building Accela record URL under Edit
+          to enable an on-demand public check.
         </p>
       ) : null}
       {archived ? (
@@ -399,18 +395,14 @@ export function PermitPortalMonitor({
                   {[check.message, check.redlineMessage].filter(Boolean).join(' ')}
                 </p>
               ) : null}
-              {check.sourceUrl &&
-              (getOfficialPermitPortalUrl(check.sourceUrl) ||
-                isHistoricalSanJosePortalUrl(check.sourceUrl)) ? (
+              {check.sourceUrl && getOfficialPermitPortalUrl(check.sourceUrl) ? (
                 <a
                   className="w-fit max-w-full break-all text-xs font-medium text-primary underline underline-offset-4 hover:no-underline focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   href={check.sourceUrl}
                   target="_blank"
                   rel="noreferrer"
                 >
-                  {isHistoricalSanJosePortalUrl(check.sourceUrl)
-                    ? 'Open historical San José source'
-                    : 'Open City of Tampa source'}
+                  Open City of Tampa source
                 </a>
               ) : null}
             </li>
