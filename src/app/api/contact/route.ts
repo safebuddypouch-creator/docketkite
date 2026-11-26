@@ -25,13 +25,19 @@ export const dynamic = 'force-dynamic';
 /** Per-IP cap before Postgres write / email / Polsia submission fan-out. */
 const CONTACT_MAX_PER_WINDOW = 5;
 const CONTACT_WINDOW_MS = 15 * 60 * 1000;
+/** Shared cap so a rotated forwarding header cannot open a new bucket each time. */
+const CONTACT_GLOBAL_MAX = 30;
+const CONTACT_GLOBAL_WINDOW_MS = 60 * 1000;
 
 export async function POST(req: Request) {
   if (!sameOrigin(req)) {
     return NextResponse.json({ error: 'forbidden_origin' }, { status: 403 });
   }
 
-  if (isRateLimited(`contact:${clientIp(req)}`, CONTACT_MAX_PER_WINDOW, CONTACT_WINDOW_MS)) {
+  if (
+    isRateLimited(`contact:${clientIp(req)}`, CONTACT_MAX_PER_WINDOW, CONTACT_WINDOW_MS) ||
+    isRateLimited('contact:global', CONTACT_GLOBAL_MAX, CONTACT_GLOBAL_WINDOW_MS)
+  ) {
     return NextResponse.json(
       { errors: { form: 'Too many messages. Please try again later.' } },
       { status: 429 },

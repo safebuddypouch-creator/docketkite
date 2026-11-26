@@ -30,13 +30,19 @@ export const dynamic = 'force-dynamic';
 /** Per-IP cap before Postgres write / email / Polsia submission fan-out. */
 const WAITLIST_MAX_PER_WINDOW = 5;
 const WAITLIST_WINDOW_MS = 15 * 60 * 1000;
+/** Shared cap so a rotated forwarding header cannot open a new bucket each time. */
+const WAITLIST_GLOBAL_MAX = 30;
+const WAITLIST_GLOBAL_WINDOW_MS = 60 * 1000;
 
 export async function POST(req: Request) {
   if (!sameOrigin(req)) {
     return NextResponse.json({ error: 'forbidden_origin' }, { status: 403 });
   }
 
-  if (isRateLimited(`waitlist:${clientIp(req)}`, WAITLIST_MAX_PER_WINDOW, WAITLIST_WINDOW_MS)) {
+  if (
+    isRateLimited(`waitlist:${clientIp(req)}`, WAITLIST_MAX_PER_WINDOW, WAITLIST_WINDOW_MS) ||
+    isRateLimited('waitlist:global', WAITLIST_GLOBAL_MAX, WAITLIST_GLOBAL_WINDOW_MS)
+  ) {
     return NextResponse.json(
       { errors: { email: 'Too many signups from this network. Please try again later.' } },
       { status: 429 },
