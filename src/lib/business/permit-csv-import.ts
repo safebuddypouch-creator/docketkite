@@ -1,4 +1,4 @@
-// @polsia:user-owned — City of Tampa permit CSV row validation and identity keys.
+// @polsia:user-owned — State of Florida Accela permit CSV row validation and identity keys.
 import {
   PermitFields,
   PermitPortalUrlRequired,
@@ -119,7 +119,7 @@ export function parsePermitImportRow(raw: Record<string, string>): RowValidation
       issues: [
         {
           field: 'portal_url',
-          message: 'Every imported permit must include a direct City of Tampa Building record URL.',
+          message: 'Every imported permit must include a direct Florida Accela Building record URL.',
         },
       ],
     };

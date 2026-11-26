@@ -237,7 +237,7 @@ test('only a paid team owner can retry an interrupted permit check and a failure
       response.request().method() === 'POST',
   );
   await retryButton.click();
-  const retryFeedback = monitor.getByText('Retrying the public City of Tampa record check…', {
+  const retryFeedback = monitor.getByText('Retrying the public Florida Accela record check…', {
     exact: true,
   });
   await expect(retryFeedback).toHaveAttribute('aria-live', 'polite');

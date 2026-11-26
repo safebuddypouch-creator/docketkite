@@ -70,8 +70,10 @@ describe('home title block', () => {
     expect(home).not.toContain('Sheet 01');
     expect(home).not.toContain('<span>Cover</span>');
     expect(home).toContain('<span>DocketKite</span>');
-    expect(home).toContain('<span>City of Tampa</span>');
+    expect(home).toContain('<span>Florida Accela</span>');
     expect(home).toContain('<span>Residential remodel permits</span>');
+    expect(home).toContain('id="coverage"');
+    expect(home).toContain('FloridaAccelaAgencyOptions');
   });
 });
 

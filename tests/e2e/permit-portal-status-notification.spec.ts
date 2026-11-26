@@ -291,7 +291,7 @@ test('simulated portal snapshots save history and notify the assigned manager on
   expect(firstEmail[0]?.body).toContain(`Checked at (UTC): ${firstTransition.check.checkedAt}`);
   expect(firstEmail[0]?.body).toContain('1. Add the missing fixture schedule (Electrical plan set; Plan E-2)');
   expect(firstEmail[0]?.body).toContain('2. Provide the requested equipment specifications');
-  expect(firstEmail[0]?.body).toContain(`Official City of Tampa record: ${permit.portalUrl}`);
+  expect(firstEmail[0]?.body).toContain(`Official Florida Accela record: ${permit.portalUrl}`);
   const firstLink = firstEmail[0]?.html.match(/href="([^"]+)"/)?.[1];
   expect(firstLink).toBeTruthy();
   if (!firstLink) throw new Error('The portal status email did not include its permit link.');

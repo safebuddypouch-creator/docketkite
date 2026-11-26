@@ -303,7 +303,7 @@ test('the public pricing page describes live permit checks, saved-status emails,
   await expect(page.getByText('/month', { exact: true })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Public checks and team status updates' })).toBeVisible();
   await expect(
-    page.getByText(/A team member starts each check for a linked official City of Tampa public Accela record/i),
+    page.getByText(/A team member starts each check for a linked official Florida Accela Building record/i),
   ).toBeVisible();
   await expect(
     page.getByText(/Checks do not run continuously or on a schedule and do not access applicant-only information/i),

@@ -2,13 +2,14 @@
 import type { Metadata } from 'next';
 import { AuthNav } from '@/components/custom/auth-nav';
 import { BrandMark } from '@/components/custom/brand-mark';
+import { FloridaAccelaAgencyOptions } from '@/components/custom/florida-accela-agency-options';
 import { Reveal } from '@/components/custom/motion-kit/reveal';
 import { WaitlistForm } from '@/components/custom/waitlist-form';
 import { siteDescription, siteName } from '@/lib/brand';
 import { publicSocialImage, publicUrl } from '@/lib/public-origin';
 import styles from './home.module.css';
 
-const pageTitle = `${siteName} — City of Tampa permit checks`;
+const pageTitle = `${siteName} — Florida Accela permit checks`;
 const canonical = publicUrl('/');
 const socialImage = publicSocialImage(siteName);
 
@@ -72,6 +73,7 @@ export default function HomePage() {
           </span>
         </a>
         <nav className={styles.nav} aria-label="Main navigation">
+          <a href="#coverage">Coverage</a>
           <a href="#workflow">How it works</a>
           <a href="#built-for">Who it’s for</a>
           <a href="#early-access">Early access</a>
@@ -88,23 +90,23 @@ export default function HomePage() {
 
       <p className={styles.sheetBar}>
         <span>DocketKite</span>
-        <span>City of Tampa</span>
+        <span>Florida Accela</span>
         <span>Residential remodel permits</span>
       </p>
 
       <section className={styles.hero} id="top">
         <Reveal as="div" trigger="load" distance={12} className={styles.heroCopy}>
           <p className={styles.eyebrow}>
-            <span className={styles.eyebrowDot} /> City of Tampa permit coverage
+            <span className={styles.eyebrowDot} /> Florida Accela permit coverage
           </p>
           <h1>
             Permit updates reach the jobsite <span>before the schedule slips.</span>
           </h1>
           <p className={styles.heroText}>
-            DocketKite is for residential remodeling teams tracking City of Tampa permits. Team
-            members can run an on-demand check of a linked public Accela record; successful checks
-            keep the portal&apos;s raw record status separate from the team&apos;s own status.
-            Checks are not scheduled, and SMS is planned but unavailable.
+            DocketKite is for residential remodeling teams tracking Florida Accela Building permits.
+            Team members can run an on-demand check of a linked public Accela record; successful
+            checks keep the portal&apos;s raw record status separate from the team&apos;s own
+            status. Checks are not scheduled, and SMS is planned but unavailable.
           </p>
           <div className={styles.heroActions}>
             <a className={styles.buttonPrimary} href="#early-access">
@@ -121,29 +123,25 @@ export default function HomePage() {
             </a>
           </div>
           <p className={styles.buildNote}>
-            <span /> Tampa city records only · checks start when a team member runs them
+            <span /> Supported Florida Accela counties and cities · checks start when a team member
+            runs them
           </p>
-          <a
-            className={styles.textLink}
-            href="https://aca-prod.accela.com/TAMPA/Cap/CapHome.aspx?TabName=Building&module=Building"
-            target="_blank"
-            rel="noreferrer"
-          >
-            Open the official City of Tampa Accela portal <ArrowIcon diagonal />
+          <a className={styles.textLink} href="#coverage">
+            See supported counties and cities <ArrowIcon />
           </a>
         </Reveal>
 
         <div
           className={styles.heroVisual}
           role="img"
-          aria-label="Diagram of an on-demand City of Tampa record check and team handoff"
+          aria-label="Diagram of an on-demand Florida Accela record check and team handoff"
         >
           <div className={styles.visualTopline}>
             <span className={styles.visualBrand}>
               <KiteMark /> DOCKETKITE
             </span>
             <span className={styles.visualLocation}>
-              CITY OF TAMPA <span>↗</span>
+              FLORIDA ACCELA <span>↗</span>
             </span>
           </div>
           <div className={styles.visualMap} aria-hidden="true">
@@ -161,7 +159,7 @@ export default function HomePage() {
               />
               <circle cx="212" cy="187" r="6" fill="#F0C14B" stroke="#152033" strokeWidth="4" />
             </svg>
-            <span className={styles.mapDistrict}>TAMPA</span>
+            <span className={styles.mapDistrict}>FL</span>
           </div>
           <div className={styles.alertCard}>
             <div className={styles.alertCardHead}>
@@ -183,7 +181,7 @@ export default function HomePage() {
               <span /> Raw public value
             </div>
             <p className={styles.alertBody}>
-              A team member starts the check, and the permit number must match the City record.
+              A team member starts the check, and the permit number must match the Accela record.
             </p>
             <div className={styles.alertFoot}>
               <span className={styles.alertCheck}>✓</span> Kept separate from team notes
@@ -198,7 +196,7 @@ export default function HomePage() {
       <div className={styles.signalBar}>
         <span className={styles.signalIntro}>MADE FOR THE WORK BETWEEN SUBMIT AND APPROVAL</span>
         <span>
-          <b>01</b> One city: Tampa
+          <b>01</b> Florida Accela portals
         </span>
         <span>
           <b>02</b> For residential remodelers
@@ -207,6 +205,24 @@ export default function HomePage() {
           <b>03</b> Monitoring, not permit filing
         </span>
       </div>
+
+      <section className={styles.coverageSection} id="coverage" aria-labelledby="coverage-title">
+        <div className={styles.coverageIntro}>
+          <p className={styles.eyebrow}>SUPPORTED PORTALS</p>
+          <h2 id="coverage-title">Florida Accela counties and cities you can check.</h2>
+          <p>
+            Pick a jurisdiction to open its official Building portal, or browse every supported
+            county and city below. Non-Accela Florida portals are not included yet.
+          </p>
+        </div>
+        <FloridaAccelaAgencyOptions
+          id="home-florida-accela-jurisdiction"
+          labelClassName={styles.coverageLabel}
+          selectClassName={styles.coverageSelect}
+          listClassName={styles.coverageList}
+          linkClassName=""
+        />
+      </section>
 
       <section className={styles.problemSection} id="built-for">
         <div className={styles.problemHeading}>
@@ -233,7 +249,7 @@ export default function HomePage() {
                 <span className={styles.timelineDotAlert}>!</span>
                 <div>
                   <strong>A city update posts</strong>
-                  <small>Raw Record Status from the City page</small>
+                  <small>Raw Record Status from the Accela page</small>
                 </div>
                 <span className={styles.timelineStateMuted}>EASY TO MISS</span>
               </div>
@@ -273,8 +289,8 @@ export default function HomePage() {
           <p className={styles.eyebrow}>A SMALL, FOCUSED WORKFLOW</p>
           <h2>From a City record check to a clearer team handoff.</h2>
           <p>
-            One city. The permit updates that matter. A simple handoff to the person coordinating
-            the work.
+            Supported Florida Accela portals. The permit updates that matter. A simple handoff to
+            the person coordinating the work.
           </p>
         </div>
         <div className={styles.steps}>
@@ -294,7 +310,7 @@ export default function HomePage() {
               </span>
             </div>
             <h3>List the permit</h3>
-            <p>The team adds a City of Tampa permit and its direct public Accela record link.</p>
+            <p>The team adds a Florida Accela permit and its direct public Building record link.</p>
           </article>
           <article className={styles.stepCard}>
             <div className={styles.stepMeta}>
@@ -364,12 +380,12 @@ export default function HomePage() {
           </h2>
           <p>
             DocketKite is for permit monitoring and coordination. It does not prepare, submit, or
-            file permits with the City.
+            file permits with the city or county.
           </p>
         </div>
         <div className={styles.boundarySide}>
           <span className={styles.boundarySideLabel}>STARTING POINT</span>
-          <strong>City of Tampa</strong>
+          <strong>Florida Accela</strong>
           <span>Residential remodeling teams</span>
           <span className={styles.boundaryDivider} />
           <span className={styles.boundarySideLabel}>PLANNED OFFER</span>
@@ -389,9 +405,9 @@ export default function HomePage() {
           <span />
         </div>
         <div className={styles.contactContent}>
-          <p className={styles.eyebrow}>EARLY ACCESS · TAMPA ONLY</p>
+          <p className={styles.eyebrow}>EARLY ACCESS · FLORIDA ACCELA</p>
           <h2 id="early-access-title">
-            Run a residential remodeling company with City of Tampa permits?
+            Run a residential remodeling company with Florida Accela permits?
           </h2>
           <p>
             Join the early-access list and help shape a permit follow-up workflow for your team.
@@ -437,7 +453,7 @@ export default function HomePage() {
         <p>
           Permit updates reach the jobsite before the schedule slips.{' '}
           <a className={styles.footerCompare} href="/compare">
-            See the City of Tampa portal and coverage notes
+            See Florida Accela coverage notes
           </a>
           {' · '}
           <a className={styles.footerCompare} href="/pricing">

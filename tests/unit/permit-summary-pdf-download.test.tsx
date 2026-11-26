@@ -95,7 +95,7 @@ describe('permit summary PDF download control', () => {
         new Response(
           JSON.stringify({
             error: 'official_record_link_required',
-            message: 'Save a direct official City of Tampa Accela Building record URL first.',
+            message: 'Save a direct official Florida Accela Building record URL first.',
           }),
           { status: 409, headers: { 'content-type': 'application/json' } },
         ),
@@ -108,7 +108,7 @@ describe('permit summary PDF download control', () => {
     await act(async () => button?.click());
 
     expect(mocks.error).toHaveBeenCalledWith(
-      'Save a direct official City of Tampa Accela Building record URL first.',
+      'Save a direct official Florida Accela Building record URL first.',
     );
     expect(mocks.success).not.toHaveBeenCalled();
     expect(anchorClick).not.toHaveBeenCalled();

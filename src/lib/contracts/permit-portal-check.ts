@@ -5,7 +5,7 @@ import { getOfficialPermitPortalUrl } from '@/lib/contracts/permit';
 export const PermitPortalCheckRequest = z.object({ teamId: z.string().min(1) });
 
 export const INVALID_PERMIT_PORTAL_URL_MESSAGE =
-  'This saved link is outside active City of Tampa coverage. Edit the permit and save its direct record URL from the official City of Tampa Accela portal before checking it.';
+  'This saved link is outside active Florida Accela coverage. Edit the permit and save its direct Building record URL from a supported official Accela portal before checking it.';
 
 export const PermitPortalCheckUrlError = z.object({
   error: z.literal('invalid_portal_url'),

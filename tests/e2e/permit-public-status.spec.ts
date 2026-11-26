@@ -377,7 +377,7 @@ test('paid team members can check a public City status and retain a separate man
   expect(initialHistoryBody.latestVerified).toBeNull();
   await expect(permitCard.getByText('No successful checks yet', { exact: true })).toBeVisible();
   await expect(
-    permitCard.getByText('No successful City of Tampa result has been verified yet.', {
+    permitCard.getByText('No successful Florida Accela result has been verified yet.', {
       exact: true,
     }),
   ).toBeVisible();
@@ -470,7 +470,7 @@ test('paid team members can check a public City status and retain a separate man
   expect(legacyFailure).toMatchObject({
     error: 'invalid_portal_url',
     message:
-      'This saved link is outside active City of Tampa coverage. Edit the permit and save its direct record URL from the official City of Tampa Accela portal before checking it.',
+      'This saved link is outside active Florida Accela coverage. Edit the permit and save its direct Building record URL from a supported official Accela portal before checking it.',
   });
   expect(await prisma.permit.findUnique({ where: { id: legacyPermit.id } })).toEqual(
     legacyPermitBefore,
@@ -518,7 +518,7 @@ test('paid team members can check a public City status and retain a separate man
     portalMonitoringReason: null,
   });
   const latestVerifiedSummary = permitCard.locator(
-    '[aria-label="Latest verified City of Tampa portal result"]',
+    '[aria-label="Latest verified Florida Accela portal result"]',
   );
   await expect(latestVerifiedSummary.getByText('In Process', { exact: true })).toBeVisible();
   await expect(latestVerifiedSummary.locator('time')).toHaveAttribute(
@@ -757,7 +757,7 @@ test('paid team members can check a public City status and retain a separate man
   await expect(reloadedCard.getByText('No status verified', { exact: true })).toHaveCount(3);
   await expect(reloadedCard.getByText(/Interrupted ·/)).toBeVisible();
   const reloadedVerifiedSummary = reloadedCard.locator(
-    '[aria-label="Latest verified City of Tampa portal result"]',
+    '[aria-label="Latest verified Florida Accela portal result"]',
   );
   await expect(
     reloadedVerifiedSummary.getByText('Awaiting Client Reply', { exact: true }),
@@ -777,7 +777,7 @@ test('paid team members can check a public City status and retain a separate man
     reloadedCard.getByText('Keep the team note intact after a portal check.'),
   ).toBeVisible();
   await expect(
-    reloadedCard.getByRole('link', { name: 'Open City of Tampa source' }).first(),
+    reloadedCard.getByRole('link', { name: 'Open Florida Accela source' }).first(),
   ).toHaveAttribute('href', sourceUrl);
 
   const recoveryResponse = page.waitForResponse(
@@ -881,11 +881,11 @@ test('paid team members can check a public City status and retain a separate man
   await captureMonitorViews(page, testInfo, interruptedOnlyCard, 'interrupted-only');
   await page.goto(`${origin}/dashboard/permits/${encodeURIComponent(permit.id)}`);
   const detailsSummary = page.getByRole('region', {
-    name: 'Latest verified City of Tampa portal result',
+    name: 'Latest verified Florida Accela portal result',
   });
   await expect(detailsSummary).toBeVisible();
   await expect(
-    detailsSummary.getByText('Record Status reported by the City of Tampa portal'),
+    detailsSummary.getByText('Record Status reported by the Florida Accela portal'),
   ).toBeVisible();
   await expect(detailsSummary.getByText(recoveryOutcome.check.status, { exact: true })).toBeVisible();
   await expect(detailsSummary.locator('time')).toHaveAttribute(
@@ -1008,7 +1008,7 @@ test('Run public check explains unsupported saved links without changing permit 
   await expect(permitCard).toBeVisible();
   await expect(permitCard.getByRole('button', { name: 'Run public check' })).toBeDisabled();
   await expect(
-    permitCard.getByRole('link', { name: 'Official City of Tampa Accela record' }),
+    permitCard.getByRole('link', { name: 'Official Florida Accela record' }),
   ).toHaveCount(0);
 
   const response = await page.request.post(
@@ -1019,10 +1019,10 @@ test('Run public check explains unsupported saved links without changing permit 
   expect(await response.json()).toMatchObject({
     error: 'invalid_portal_url',
     message:
-      'This saved link is outside active City of Tampa coverage. Edit the permit and save its direct record URL from the official City of Tampa Accela portal before checking it.',
+      'This saved link is outside active Florida Accela coverage. Edit the permit and save its direct Building record URL from a supported official Accela portal before checking it.',
   });
   const unsupportedNote = permitCard.getByText(
-    /direct City of Tampa Building Accela record URL under Edit/i,
+    /direct Florida Accela Building record URL under Edit/i,
   );
   await expect(unsupportedNote).toBeVisible();
 

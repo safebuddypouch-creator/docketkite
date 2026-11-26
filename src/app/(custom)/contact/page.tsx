@@ -6,7 +6,7 @@ import { siteName } from '@/lib/brand';
 import { publicSocialImage, publicUrl } from '@/lib/public-origin';
 
 const description =
-  'Ask DocketKite a question about City of Tampa permit checks or the current team workflow.';
+  'Ask DocketKite a question about State of Florida Accela permit checks or the current team workflow.';
 
 const canonical = publicUrl('/contact');
 const socialImage = publicSocialImage(siteName);
@@ -33,18 +33,18 @@ export default function ContactPage() {
     <main className="dk-yard min-h-[calc(100dvh-3.5rem)] text-foreground">
       <div className="mx-auto grid w-full max-w-6xl gap-9 px-4 py-10 sm:px-6 sm:py-14 lg:grid-cols-[minmax(0,0.82fr)_minmax(25rem,1fr)] lg:items-start lg:gap-16 lg:px-8 lg:py-20">
         <header className="flex flex-col items-start gap-5 lg:pt-5">
-          <p className="dk-kicker">DocketKite · City of Tampa permit desk</p>
+          <p className="dk-kicker">DocketKite · State of Florida permit desk</p>
           <h1 className="max-w-xl font-display text-5xl font-semibold uppercase leading-[0.92] tracking-wide sm:text-6xl lg:text-7xl">
             Questions about a permit?
           </h1>
           <p className="max-w-lg text-base leading-7 text-muted-foreground sm:text-lg sm:leading-8">
-            Send the DocketKite team a question about City of Tampa permit checks or the current
+            Send the DocketKite team a question about State of Florida Accela permit checks or the current
             workflow. Add the email address where you&apos;d like a reply.
           </p>
           <div className="mt-2 max-w-lg border-t border-border pt-5">
             <p className="text-sm font-semibold text-foreground">A focused, on-demand workflow</p>
             <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              DocketKite currently supports team-managed City of Tampa permit checks. A team member
+              DocketKite currently supports team-managed State of Florida Accela permit checks. A team member
               starts each check; scheduled monitoring and SMS are not available today.
             </p>
           </div>
@@ -59,7 +59,7 @@ export default function ContactPage() {
         <section aria-labelledby="contact-form-title" className="dk-sheet">
           <div className="dk-titleblock">
             <span>Field ticket</span>
-            <span>City of Tampa</span>
+            <span>State of Florida</span>
             <span>Reply by email</span>
           </div>
           <div className="p-5 sm:p-7 lg:p-8">

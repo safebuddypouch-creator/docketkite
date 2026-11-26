@@ -10,7 +10,7 @@ type DashboardSearchParams = Promise<{
 
 export const metadata: Metadata = {
   title: 'Team workspace',
-  description: 'Set up team access and manage your City of Tampa permit workspace.',
+  description: 'Set up team access and manage your State of Florida permit workspace.',
 };
 
 export default async function DashboardPage({

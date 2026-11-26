@@ -73,7 +73,7 @@ export function DashboardShell({ children }: DashboardShellProps) {
                   DocketKite
                 </span>
                 <span className="hidden text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground sm:block">
-                  City of Tampa permit desk
+                  State of Florida permit desk
                 </span>
               </span>
             </Link>

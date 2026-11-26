@@ -6,7 +6,7 @@ import type { PermitPortalFetchedPage } from '@/lib/business/permit-portal-page-
 
 const SAMPLE_PAGE: PermitPortalFetchedPage = {
   markdown: 'Record Status: In Process\nPermit Number: BLD-27-0529173',
-  title: 'City of Tampa Accela record',
+  title: 'Florida Accela record',
   truncated: false,
   cached: false,
   fetchedAt: '2026-03-24T12:00:00.000Z',

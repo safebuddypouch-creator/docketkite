@@ -33,7 +33,7 @@ function rowsLabel(count: number): string {
 
 function issueMessage(issue: CsvIssue): string {
   if (issue.field === 'portal_url') {
-    return 'Use a nonempty, direct City of Tampa Accela Building record URL for this row.';
+    return 'Use a nonempty, direct Florida Accela Building record URL for this row.';
   }
   return issue.message;
 }

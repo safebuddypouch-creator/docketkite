@@ -1,17 +1,17 @@
-// @polsia:user-owned — sourced City of Tampa permit coverage comparison.
+// @polsia:user-owned — sourced State of Florida Accela permit coverage comparison.
 import type { ComparisonContent } from '@/modules/comparison-page/types';
 
 export const comparisonContent: ComparisonContent = {
-  eyebrow: 'City of Tampa permit coverage · reviewed November 17, 2026',
-  title: 'The City record, and what DocketKite can read from it.',
+  eyebrow: 'Florida Accela permit coverage · reviewed November 25, 2026',
+  title: 'The Accela record, and what DocketKite can read from it.',
   intro:
-    'DocketKite supports City of Tampa municipal permit records through the City’s official Accela portal. A Tampa mailing address alone does not establish jurisdiction. This page distinguishes what the public portal exposed in a small anonymous sample from what the team workspace does today.',
-  tableCaption: 'City of Tampa Accela public permit records and DocketKite workflow',
+    'DocketKite supports State of Florida Accela Building permit records through official Citizen Access portals. A Florida mailing address alone does not establish jurisdiction. This page distinguishes what a public portal exposed in a small anonymous sample from what the team workspace does today.',
+  tableCaption: 'Florida Accela public permit records and DocketKite workflow',
   columns: [
     {
       id: 'tampa-accela',
-      name: 'City of Tampa Accela',
-      description: 'Official municipal permit record portal',
+      name: 'Florida Accela',
+      description: 'Official municipal Accela Building record portals',
     },
     {
       id: 'docketkite',
@@ -27,11 +27,12 @@ export const comparisonContent: ComparisonContent = {
       rows: [
         {
           label: 'Jurisdiction',
-          description: 'Permit records must belong to the City of Tampa.',
+          description: 'Permit records must belong to a supported Florida Accela Building agency.',
           values: {
-            'tampa-accela': 'City of Tampa municipal records in the TAMPA Accela agency.',
+            'tampa-accela':
+              'Florida Accela agencies such as City of Tampa (TAMPA), Hillsborough County (HCFL), Pasco, Pinellas, and other curated Florida Building portals.',
             docketkite:
-              'Only direct City of Tampa Accela Building record URLs are accepted for active checks. Hillsborough County, nearby municipalities, and broader Tampa-area coverage are unsupported.',
+              'Only direct CapDetail Building record URLs from the curated Florida Accela allowlist are accepted for active checks. Non-Accela Florida portals and out-of-state Accela agencies remain unsupported.',
           },
         },
         {
@@ -98,20 +99,20 @@ export const comparisonContent: ComparisonContent = {
   disclaimer:
     'A small anonymous sample showed record IDs, displayed raw Record Status values, conditions, and attachment-list metadata. It does not establish a complete list of public fields or statuses, or public access to every file. The City identifies designated secure files as contact-only. DocketKite checks are on demand and email notifications depend on a verified status transition or an interrupted check; SMS is unavailable.',
   cta: {
-    title: 'Open the official City of Tampa portal',
+    title: 'Open an official Florida Accela portal',
     description:
-      'Search City records directly. Confirm the municipality from the official record, not from a Tampa mailing address alone.',
+      'Search Building records directly. Confirm the municipality from the official record, not from a Florida mailing address alone.',
     label: 'Open Accela Building records',
     href: 'https://aca-prod.accela.com/TAMPA/Cap/CapHome.aspx?TabName=Building&module=Building',
   },
 };
 
 export const comparisonAccessLimits = {
-  eyebrow: 'Tampa public-access guide',
+  eyebrow: 'Florida public-access guide',
   heading: 'What a public search can confirm—and where access stops',
   publicHeading: 'Public search and sampled status details',
   publicCopy:
-    'The City of Tampa’s Accela guide says general public permit records can be searched without an account or login. In the documented anonymous sample, record IDs and the displayed raw Record Status were visible, including “In Process” and “Awaiting Client Reply.” Those are sample observations, not a complete list of visible fields or statuses.',
+    'Florida Accela Citizen Access guides say general public permit records can be searched without an account or login. In the documented anonymous sample, record IDs and the displayed raw Record Status were visible, including “In Process” and “Awaiting Client Reply.” Those are sample observations, not a complete list of visible fields or statuses.',
   sampleCopy:
     'The sample also showed conditions and attachment-list metadata, but did not confirm publicly accessible correction-letter files. “Stop Work Order” was observed as a condition, not a remapped permit status.',
   secureHeading: 'Some records and files need authorized access',
@@ -143,7 +144,7 @@ export interface ComparisonSource {
 export const comparisonSources: ComparisonSource[] = [
   {
     id: 'tampa-accela',
-    label: 'City of Tampa Accela Building permit portal',
+    label: 'Example Florida Accela Building permit portal (City of Tampa)',
     publisher: 'City of Tampa',
     href: 'https://aca-prod.accela.com/TAMPA/Cap/CapHome.aspx?TabName=Building&module=Building',
   },
@@ -203,4 +204,4 @@ export const comparisonCitations: Record<string, Record<string, readonly string[
 };
 
 export const comparisonResearchNote =
-  'The City of Tampa Accela guide says general public permit records can be searched without login; its secure-file instructions describe the authorized-contact boundary. A documented anonymous sample showed record IDs, raw displayed Record Status values, conditions, and attachment-list metadata, but did not confirm a publicly accessible correction-letter file. The sample is bounded and not a reliability claim. API field visibility, the restricted-versus-missing interface behavior, and the complete exemption list remain unverified.';
+  'Florida Accela guides say general public permit records can be searched without login; secure-file instructions describe the authorized-contact boundary. A documented anonymous sample showed record IDs, raw displayed Record Status values, conditions, and attachment-list metadata, but did not confirm a publicly accessible correction-letter file. The sample is bounded and not a reliability claim. API field visibility, the restricted-versus-missing interface behavior, and the complete exemption list remain unverified.';

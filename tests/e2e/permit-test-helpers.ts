@@ -1,4 +1,4 @@
-// @polsia:user-owned — synthetic direct City of Tampa Accela URLs for integration tests.
+// @polsia:user-owned — synthetic direct Florida Accela URLs for integration tests.
 export function tampaRecordUrl(
   permitNumber: string,
   extraQuery: Record<string, string> = {},

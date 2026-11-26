@@ -1,4 +1,4 @@
-// @polsia:user-owned — regression coverage for City of Tampa permit CSV validation.
+// @polsia:user-owned — regression coverage for Florida Accela permit CSV validation.
 import { describe, expect, it } from 'vitest';
 import {
   parsePermitImportKey,
@@ -25,7 +25,7 @@ describe('permit CSV rows', () => {
     expect(CSV_LIMITS.records).toBe(10_000);
     expect(() => decodeCsv(Uint8Array.from([0xff]))).toThrow();
     expect(() => parseCsv(`col\n${'x'.repeat(CSV_LIMITS.bytes)}`, ',')).toThrow(
-      /10 Mio/,
+      /10 MiB/,
     );
     const rows = Array.from({ length: CSV_LIMITS.records }, () => 'x').join('\n');
     expect(parseCsv(`col\n${rows}`, ',').rows).toHaveLength(CSV_LIMITS.records);

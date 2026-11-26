@@ -10,7 +10,7 @@ const socialImage = publicSocialImage();
 
 export const metadata: Metadata = {
   title: 'Sign in',
-  description: 'Sign in to your private City of Tampa permit workspace.',
+  description: 'Sign in to your private State of Florida permit workspace.',
   openGraph: { images: [socialImage] },
   twitter: { card: 'summary_large_image', images: [socialImage.url] },
 };
@@ -35,7 +35,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
     <AuthShell
       eyebrow="Welcome back"
       title="Pick up where the job left off."
-      description="Sign in to return to your private City of Tampa permit list and team notes."
+      description="Sign in to return to your private State of Florida permit list and team notes."
       footer={
         <>
           New to DocketKite?{' '}

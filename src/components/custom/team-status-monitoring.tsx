@@ -125,13 +125,13 @@ export function TeamStatusMonitoring({ initialTeamId }: { initialTeamId: string 
       <header className="grid gap-4 border-b border-border pb-5 sm:flex sm:items-end sm:justify-between">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">
-            City of Tampa · Team monitoring
+            State of Florida · Team monitoring
           </p>
           <h1 className="mt-2 font-display text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
             Public status changes
           </h1>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-            Changes are recorded only from later, fresh, permit-identified City of Tampa Record
+            Changes are recorded only from later, fresh, permit-identified Florida Accela Record
             Status observations. The hosted watcher is scheduled hourly. A first observation is a
             baseline; repeated, cached, stale, or out-of-order results do not create a change.
           </p>

@@ -12,7 +12,7 @@ import {
 } from '@/lib/business/permit-portal-status';
 import { PermitPortalUrl } from '@/lib/contracts/permit';
 
-describe('public City of Tampa permit status extraction', () => {
+describe('public Florida Accela permit status extraction', () => {
   it('keeps the exact Record Status value when the same record number is visible', () => {
     const page = [
       '# Record BLD-27-0529173',
@@ -158,7 +158,7 @@ describe('public City of Tampa permit status extraction', () => {
     });
   });
 
-  it('accepts the verified City of Tampa direct record link and rejects other jurisdictions', () => {
+  it('accepts curated Florida Accela CapDetail links and rejects other jurisdictions', () => {
     expect(
       PermitPortalUrl.safeParse(
         'https://aca-prod.accela.com/TAMPA/Cap/CapDetail.aspx?Module=Building&capID1=26CAP&capID2=00000&capID3=02UTH&agencyCode=TAMPA',
@@ -167,7 +167,17 @@ describe('public City of Tampa permit status extraction', () => {
     expect(PermitPortalUrl.safeParse('https://example.invalid/search/').success).toBe(false);
     expect(
       PermitPortalUrl.safeParse(
+        'https://aca-prod.accela.com/HCFL/Cap/CapDetail.aspx?Module=Building&capID1=26CAP&capID2=00000&capID3=02UTH&agencyCode=HCFL',
+      ).success,
+    ).toBe(true);
+    expect(
+      PermitPortalUrl.safeParse(
         'https://aca-prod.accela.com/HILLSBOROUGH/Cap/CapDetail.aspx?Module=Building&capID1=26CAP&capID2=00000&capID3=02UTH&agencyCode=HILLSBOROUGH',
+      ).success,
+    ).toBe(false);
+    expect(
+      PermitPortalUrl.safeParse(
+        'https://aca-prod.accela.com/DENVER/Cap/CapDetail.aspx?Module=Building&capID1=26CAP&capID2=00000&capID3=02UTH&agencyCode=DENVER',
       ).success,
     ).toBe(false);
   });

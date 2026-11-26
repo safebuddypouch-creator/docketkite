@@ -1,4 +1,4 @@
-// @polsia:user-owned — scheduled hourly checks of saved City of Tampa Building records.
+// @polsia:user-owned — scheduled hourly checks of saved Florida Accela Building records.
 import 'server-only';
 import { readPermitPortalPage } from '@/lib/business/permit-portal-retrieval';
 import {
@@ -100,7 +100,7 @@ async function main(): Promise<void> {
       } else if (read.kind === 'missing_permit_number') {
         message = 'A permit number is required before the public City record can be checked.';
       } else if (read.kind === 'invalid_url') {
-        message = 'The saved link is outside active City of Tampa coverage.';
+        message = 'The saved link is outside active Florida Accela coverage.';
       } else if (read.kind === 'failed') {
         message = 'The public City record could not be retrieved during the scheduled check.';
       }

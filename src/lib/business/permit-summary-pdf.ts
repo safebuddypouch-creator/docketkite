@@ -1,4 +1,4 @@
-// @polsia:user-owned — public-record fields for a saved Tampa permit snapshot.
+// @polsia:user-owned — public-record fields for a saved Florida Accela permit snapshot.
 import { getOfficialPermitPortalUrl } from '@/lib/contracts/permit';
 import type { BlockDocumentSpec } from '@/lib/pdf/schema';
 
@@ -61,7 +61,7 @@ export function buildPermitSummaryPdf(record: PermitSummaryPdfRecord): PermitSum
     return {
       available: false,
       error: 'permit_reference_required',
-      message: 'Add the Tampa permit reference before downloading its summary.',
+      message: 'Add the Florida Accela permit reference before downloading its summary.',
     };
   }
 
@@ -74,14 +74,14 @@ export function buildPermitSummaryPdf(record: PermitSummaryPdfRecord): PermitSum
       available: false,
       error: 'official_record_link_required',
       message:
-        'Save a direct official City of Tampa Accela Building record URL before downloading this summary.',
+        'Save a direct official Florida Accela Building record URL before downloading this summary.',
     };
   }
 
   const spec: BlockDocumentSpec = {
     metadata: {
-      title: `City of Tampa Permit Summary — ${permitNumber}`,
-      subject: 'Saved Tampa permit public-record snapshot',
+      title: `State of Florida Permit Summary — ${permitNumber}`,
+      subject: 'Saved Florida Accela permit public-record snapshot',
     },
     page: { margins: { top: 48, right: 48, bottom: 48, left: 48 } },
     defaultTextStyle: { fontSize: 10, lineHeight: 1.4, color: '#25282C' },
@@ -90,7 +90,7 @@ export function buildPermitSummaryPdf(record: PermitSummaryPdfRecord): PermitSum
       keyValue: { labelColor: '#5E6268', spaceAfter: 18 },
     },
     blocks: [
-      { type: 'heading', level: 1, text: 'City of Tampa Permit Summary' },
+      { type: 'heading', level: 1, text: 'State of Florida Permit Summary' },
       {
         type: 'text',
         text: 'Saved public-record snapshot · Not a permit filing',
@@ -108,7 +108,7 @@ export function buildPermitSummaryPdf(record: PermitSummaryPdfRecord): PermitSum
             value: check?.status?.trim() ?? 'No verified result available.',
           },
           { label: 'Check time (UTC)', value: utcLabel(check?.checkedAt ?? null) },
-          { label: 'Official City of Tampa Accela Building record URL', value: officialUrl },
+          { label: 'Official Florida Accela Building record URL', value: officialUrl },
         ],
         fontSize: 10,
         spaceAfter: 18,

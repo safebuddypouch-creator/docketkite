@@ -34,7 +34,7 @@ export const faqContent: FaqContent = {
       id: 'latest-monitoring-outcome',
       question: 'How does the Latest monitoring outcome filter work?',
       answer:
-        'Use Latest monitoring outcome on the team permit list. All outcomes does not narrow the list by monitoring outcome. Successful matches a permit whose newest saved check has the result checked; Failed matches a newest saved check with any non-success result; and Not yet checked means no check has been saved for that permit. The filter reflects only each permit’s newest saved check. It does not establish live or continuous Tampa monitoring or confirm alert delivery.',
+        'Use Latest monitoring outcome on the team permit list. All outcomes does not narrow the list by monitoring outcome. Successful matches a permit whose newest saved check has the result checked; Failed matches a newest saved check with any non-success result; and Not yet checked means no check has been saved for that permit. The filter reflects only each permit’s newest saved check. It does not establish live or continuous Florida Accela monitoring or confirm alert delivery.',
     },
     {
       id: 'assign-project-manager',

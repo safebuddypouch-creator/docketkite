@@ -18,6 +18,7 @@ import { toast } from 'sonner';
 import { completionPercent } from '@/components/custom/completion-progress';
 import { CsvExporter } from '@/components/custom/csv-exporter';
 import { CsvImporter } from '@/components/custom/csv-importer';
+import { FloridaAccelaAgencyOptions } from '@/components/custom/florida-accela-agency-options';
 import { PermitLetterDraft } from '@/components/custom/permit-letter-draft';
 import { PermitPortalMonitor } from '@/components/custom/permit-portal-monitor';
 import { Badge } from '@/components/ui/badge';
@@ -142,7 +143,7 @@ function PermitEditor({
         </label>
         <label className="grid gap-1.5 text-sm font-medium" htmlFor={portalUrlId}>
           <span className="flex flex-wrap items-baseline justify-between gap-x-2">
-            <span>Official City of Tampa Accela Building record URL</span>
+            <span>Official Florida Accela Building record URL</span>
             <span className="font-normal text-muted-foreground">
               {editing ? 'Optional for older records' : 'Required'}
             </span>
@@ -159,10 +160,15 @@ function PermitEditor({
           />
           <FieldError message={form.formState.errors.portalUrl?.message} />
           <span id={portalUrlHelpId} className="text-xs font-normal text-muted-foreground">
-            Use the direct Building detail page with the record IDs in its URL. A Tampa mailing
-            address alone does not establish City jurisdiction. Checks are on demand, confirm the
+            Use a direct Florida Accela Building detail page with the record IDs in its URL. A
+            mailing address alone does not establish jurisdiction. Checks are on demand, confirm the
             permit number, and do not access applicant-only details.
           </span>
+          <FloridaAccelaAgencyOptions
+            variant="compact"
+            id={`${portalUrlId}-jurisdiction`}
+            label="Open a supported county or city portal"
+          />
           {officialPortalUrl ? (
             <a
               className="w-fit text-sm font-medium text-primary underline underline-offset-4 hover:no-underline focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -170,7 +176,7 @@ function PermitEditor({
               target="_blank"
               rel="noreferrer"
             >
-              Open saved City portal link
+              Open saved Accela record link
             </a>
           ) : null}
         </label>
@@ -198,7 +204,7 @@ function PermitEditor({
             id="permit-address"
             autoComplete="street-address"
             required
-            placeholder="Street address in the City of Tampa"
+            placeholder="Street address in the State of Florida"
             aria-invalid={Boolean(form.formState.errors.address)}
             {...form.register('address')}
           />
@@ -467,7 +473,7 @@ function PermitCard({
             </p>
             <h2 className="mt-1 text-lg font-semibold">{permit.projectName}</h2>
           </div>
-          <Badge variant="outline">{officialPortalUrl ? 'City of Tampa' : 'Not monitored'}</Badge>
+          <Badge variant="outline">{officialPortalUrl ? 'State of Florida' : 'Not monitored'}</Badge>
         </div>
         <PermitEditor
           initialValues={{
@@ -503,7 +509,7 @@ function PermitCard({
             <h2 className="break-words text-lg font-semibold tracking-tight text-foreground">
               {permit.projectName}
             </h2>
-            <Badge variant="outline">{officialPortalUrl ? 'City of Tampa' : 'Not monitored'}</Badge>
+            <Badge variant="outline">{officialPortalUrl ? 'State of Florida' : 'Not monitored'}</Badge>
             <Badge variant={permit.status === 'Issued' ? 'default' : 'secondary'}>
               {permit.status}
             </Badge>
@@ -528,10 +534,10 @@ function PermitCard({
                 target="_blank"
                 rel="noreferrer"
               >
-                Official City of Tampa Accela record
+                Official Florida Accela record
               </a>
               <p className="text-xs text-muted-foreground">
-                Tampa public record link. Applicant-only information is not accessed.
+                Florida Accela public record link. Applicant-only information is not accessed.
               </p>
             </div>
           ) : null}
@@ -997,7 +1003,7 @@ export function PermitWorkspace({
       <section className="flex flex-col gap-4 border-b border-border pb-6 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">
-            City of Tampa · Permit desk
+            State of Florida · Permit desk
           </p>
           <h2 className="mt-2 font-display text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
             Your permits
@@ -1291,7 +1297,7 @@ export function PermitWorkspace({
           </summary>
           <div className="border-t border-border px-5 py-5 sm:px-6">
             <p className="mb-5 max-w-2xl text-sm leading-6 text-muted-foreground">
-              Add City of Tampa permit records to this team. Every row needs a direct City of Tampa
+              Add Florida Accela permit records to this team. Every row needs a direct Florida
               Accela Building record URL with its record IDs; portal home, search, and non-Building
               links are rejected. Existing records are skipped, and no rows are saved if any row has
               an issue.
@@ -1315,7 +1321,7 @@ export function PermitWorkspace({
               Manual entry
             </p>
             <h2 id="new-permit-title" className="mt-1 text-xl font-semibold">
-              Add a monitored Tampa permit
+              Add a monitored Florida permit
             </h2>
             <p className="mt-1 text-sm text-muted-foreground">
               This records a job for on-demand status checks. Redline does not file the permit with
@@ -1388,7 +1394,7 @@ export function PermitWorkspace({
                     : assignedOnly
                       ? 'Turn off Assigned to me to return to the full team list.'
                       : view === 'active'
-                        ? 'Add your team’s first City of Tampa permit with its reference and official Building record URL. This saves it for on-demand checks; it does not file with the City.'
+                        ? 'Add your team’s first State of Florida Accela permit with its reference and official Building record URL. This saves it for on-demand checks; it does not file with the city or county.'
                         : 'Permits you archive will appear here and stay out of the active list.'}
           </p>
           {searchTerm.trim() || assignedOnly || interruptedMonitoring || monitoringOutcomeFilter ? (
