@@ -5,6 +5,7 @@ import { ArrowLeft, FileText } from 'lucide-react';
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
+import { CompletionProgress } from '@/components/custom/completion-progress';
 import { PermitChecklistPdfDownload } from '@/components/custom/permit-checklist-pdf-download';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -150,8 +151,10 @@ export function PermitCorrectionChecklistView({
           </Link>
         </Button>
         <div className="flex flex-wrap items-center justify-end gap-2">
-          <Badge variant="secondary">
-            {completedCount} of {checklist.items.length} team tasks complete
+          <Badge variant={completedCount === checklist.items.length ? 'default' : 'secondary'}>
+            {completedCount === checklist.items.length && checklist.items.length > 0
+              ? 'All team tasks are done'
+              : `${completedCount} of ${checklist.items.length} team tasks complete`}
           </Badge>
           <PermitChecklistPdfDownload permitId={permitId} letterId={letterId} />
         </div>
@@ -173,6 +176,7 @@ export function PermitCorrectionChecklistView({
             Checking an item saves a team task update only. It never changes the permit’s manually
             maintained status.
           </p>
+          <CompletionProgress completed={completedCount} total={checklist.items.length} />
         </div>
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4">
           <div className="flex min-w-0 items-center gap-3">
