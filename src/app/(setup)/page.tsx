@@ -87,8 +87,7 @@ export default function HomePage() {
       </header>
 
       <p className={styles.sheetBar}>
-        <span>Sheet 01</span>
-        <span>Cover</span>
+        <span>DocketKite</span>
         <span>City of Tampa</span>
         <span>Residential remodel permits</span>
       </p>

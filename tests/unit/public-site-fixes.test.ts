@@ -64,6 +64,17 @@ describe('signup validation sentences', () => {
   });
 });
 
+describe('home title block', () => {
+  it('uses the product name instead of a drawing-sheet cover label', () => {
+    const home = readFileSync(path.join(process.cwd(), 'src/app/(setup)/page.tsx'), 'utf8');
+    expect(home).not.toContain('Sheet 01');
+    expect(home).not.toContain('<span>Cover</span>');
+    expect(home).toContain('<span>DocketKite</span>');
+    expect(home).toContain('<span>City of Tampa</span>');
+    expect(home).toContain('<span>Residential remodel permits</span>');
+  });
+});
+
 describe('retired Polsia inbox', () => {
   it('is not a mail destination and is not on the home page', () => {
     expect(companyNotificationInbox('docketkite-8vdtwl@polsia.app')).toBeUndefined();
